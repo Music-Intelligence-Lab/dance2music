@@ -1,0 +1,1059 @@
+{
+ "source": "Versilian Studios Chamber Orchestra 2 Community Edition (VSCO-2-CE), https://github.com/sgossner/VSCO-2-CE",
+ "license": "CC0-1.0 (public domain dedication), https://github.com/sgossner/VSCO-2-CE/blob/master/LICENSE",
+ "credit": "Recorded by Sam Gossner & Simon Dalzell (Versilian Studios / Ivy Audio)",
+ "commit": "440300901dfe9275fd84e0b7763af1f8443ae62e",
+ "sections": {
+  "vn1": {
+   "legato_p": [
+    {
+     "midi": 57,
+     "file": "vn1/legato_f_57.flac",
+     "loopStart": 0.74998,
+     "loopEnd": 2.74998,
+     "rms": 0.1964
+    },
+    {
+     "midi": 62,
+     "file": "vn1/legato_f_62.flac",
+     "loopStart": 0.89998,
+     "loopEnd": 2.89998,
+     "rms": 0.1954
+    },
+    {
+     "midi": 66,
+     "file": "vn1/legato_f_66.flac",
+     "loopStart": 0.94998,
+     "loopEnd": 2.94998,
+     "rms": 0.1958
+    },
+    {
+     "midi": 69,
+     "file": "vn1/legato_f_69.flac",
+     "loopStart": 0.84998,
+     "loopEnd": 2.84998,
+     "rms": 0.1982
+    },
+    {
+     "midi": 72,
+     "file": "vn1/legato_f_72.flac",
+     "loopStart": 0.79998,
+     "loopEnd": 2.79998,
+     "rms": 0.1989
+    },
+    {
+     "midi": 76,
+     "file": "vn1/legato_f_76.flac",
+     "loopStart": 0.94998,
+     "loopEnd": 2.94998,
+     "rms": 0.1958
+    },
+    {
+     "midi": 79,
+     "file": "vn1/legato_f_79.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.1944
+    },
+    {
+     "midi": 83,
+     "file": "vn1/legato_f_83.flac",
+     "loopStart": 0.74998,
+     "loopEnd": 2.74998,
+     "rms": 0.1998
+    },
+    {
+     "midi": 86,
+     "file": "vn1/legato_f_86.flac",
+     "loopStart": 0.79998,
+     "loopEnd": 2.79998,
+     "rms": 0.1989
+    }
+   ],
+   "legato_f": [
+    {
+     "midi": 57,
+     "file": "vn1/legato_f_57.flac",
+     "loopStart": 0.74998,
+     "loopEnd": 2.74998,
+     "rms": 0.1964
+    },
+    {
+     "midi": 62,
+     "file": "vn1/legato_f_62.flac",
+     "loopStart": 0.89998,
+     "loopEnd": 2.89998,
+     "rms": 0.1954
+    },
+    {
+     "midi": 66,
+     "file": "vn1/legato_f_66.flac",
+     "loopStart": 0.94998,
+     "loopEnd": 2.94998,
+     "rms": 0.1958
+    },
+    {
+     "midi": 69,
+     "file": "vn1/legato_f_69.flac",
+     "loopStart": 0.84998,
+     "loopEnd": 2.84998,
+     "rms": 0.1982
+    },
+    {
+     "midi": 72,
+     "file": "vn1/legato_f_72.flac",
+     "loopStart": 0.79998,
+     "loopEnd": 2.79998,
+     "rms": 0.1989
+    },
+    {
+     "midi": 76,
+     "file": "vn1/legato_f_76.flac",
+     "loopStart": 0.94998,
+     "loopEnd": 2.94998,
+     "rms": 0.1958
+    },
+    {
+     "midi": 79,
+     "file": "vn1/legato_f_79.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.1944
+    },
+    {
+     "midi": 83,
+     "file": "vn1/legato_f_83.flac",
+     "loopStart": 0.74998,
+     "loopEnd": 2.74998,
+     "rms": 0.1998
+    },
+    {
+     "midi": 86,
+     "file": "vn1/legato_f_86.flac",
+     "loopStart": 0.79998,
+     "loopEnd": 2.79998,
+     "rms": 0.1989
+    }
+   ],
+   "tremolo": [
+    {
+     "midi": 57,
+     "file": "vn1/tremolo_57.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1988
+    },
+    {
+     "midi": 62,
+     "file": "vn1/tremolo_62.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2006
+    },
+    {
+     "midi": 69,
+     "file": "vn1/tremolo_69.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1986
+    },
+    {
+     "midi": 72,
+     "file": "vn1/tremolo_72.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2004
+    },
+    {
+     "midi": 76,
+     "file": "vn1/tremolo_76.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2006
+    },
+    {
+     "midi": 79,
+     "file": "vn1/tremolo_79.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2016
+    },
+    {
+     "midi": 83,
+     "file": "vn1/tremolo_83.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1983
+    },
+    {
+     "midi": 86,
+     "file": "vn1/tremolo_86.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2006
+    }
+   ],
+   "pizz": [
+    {
+     "midi": 55,
+     "file": "vn1/pizz_55.flac",
+     "rms": 0.0246
+    },
+    {
+     "midi": 62,
+     "file": "vn1/pizz_62.flac",
+     "rms": 0.0282
+    },
+    {
+     "midi": 69,
+     "file": "vn1/pizz_69.flac",
+     "rms": 0.0789
+    },
+    {
+     "midi": 76,
+     "file": "vn1/pizz_76.flac",
+     "rms": 0.0396
+    },
+    {
+     "midi": 83,
+     "file": "vn1/pizz_83.flac",
+     "rms": 0.0961
+    }
+   ]
+  },
+  "vn2": {
+   "legato_p": [
+    {
+     "midi": 57,
+     "file": "vn1/legato_f_57.flac",
+     "loopStart": 0.74998,
+     "loopEnd": 2.74998,
+     "rms": 0.1964
+    },
+    {
+     "midi": 62,
+     "file": "vn1/legato_f_62.flac",
+     "loopStart": 0.89998,
+     "loopEnd": 2.89998,
+     "rms": 0.1954
+    },
+    {
+     "midi": 66,
+     "file": "vn1/legato_f_66.flac",
+     "loopStart": 0.94998,
+     "loopEnd": 2.94998,
+     "rms": 0.1958
+    },
+    {
+     "midi": 69,
+     "file": "vn1/legato_f_69.flac",
+     "loopStart": 0.84998,
+     "loopEnd": 2.84998,
+     "rms": 0.1982
+    },
+    {
+     "midi": 72,
+     "file": "vn1/legato_f_72.flac",
+     "loopStart": 0.79998,
+     "loopEnd": 2.79998,
+     "rms": 0.1989
+    },
+    {
+     "midi": 76,
+     "file": "vn1/legato_f_76.flac",
+     "loopStart": 0.94998,
+     "loopEnd": 2.94998,
+     "rms": 0.1958
+    },
+    {
+     "midi": 79,
+     "file": "vn1/legato_f_79.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.1944
+    },
+    {
+     "midi": 83,
+     "file": "vn1/legato_f_83.flac",
+     "loopStart": 0.74998,
+     "loopEnd": 2.74998,
+     "rms": 0.1998
+    },
+    {
+     "midi": 86,
+     "file": "vn1/legato_f_86.flac",
+     "loopStart": 0.79998,
+     "loopEnd": 2.79998,
+     "rms": 0.1989
+    }
+   ],
+   "legato_f": [
+    {
+     "midi": 57,
+     "file": "vn1/legato_f_57.flac",
+     "loopStart": 0.74998,
+     "loopEnd": 2.74998,
+     "rms": 0.1964
+    },
+    {
+     "midi": 62,
+     "file": "vn1/legato_f_62.flac",
+     "loopStart": 0.89998,
+     "loopEnd": 2.89998,
+     "rms": 0.1954
+    },
+    {
+     "midi": 66,
+     "file": "vn1/legato_f_66.flac",
+     "loopStart": 0.94998,
+     "loopEnd": 2.94998,
+     "rms": 0.1958
+    },
+    {
+     "midi": 69,
+     "file": "vn1/legato_f_69.flac",
+     "loopStart": 0.84998,
+     "loopEnd": 2.84998,
+     "rms": 0.1982
+    },
+    {
+     "midi": 72,
+     "file": "vn1/legato_f_72.flac",
+     "loopStart": 0.79998,
+     "loopEnd": 2.79998,
+     "rms": 0.1989
+    },
+    {
+     "midi": 76,
+     "file": "vn1/legato_f_76.flac",
+     "loopStart": 0.94998,
+     "loopEnd": 2.94998,
+     "rms": 0.1958
+    },
+    {
+     "midi": 79,
+     "file": "vn1/legato_f_79.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.1944
+    },
+    {
+     "midi": 83,
+     "file": "vn1/legato_f_83.flac",
+     "loopStart": 0.74998,
+     "loopEnd": 2.74998,
+     "rms": 0.1998
+    },
+    {
+     "midi": 86,
+     "file": "vn1/legato_f_86.flac",
+     "loopStart": 0.79998,
+     "loopEnd": 2.79998,
+     "rms": 0.1989
+    }
+   ],
+   "tremolo": [
+    {
+     "midi": 57,
+     "file": "vn1/tremolo_57.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1988
+    },
+    {
+     "midi": 62,
+     "file": "vn1/tremolo_62.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2006
+    },
+    {
+     "midi": 69,
+     "file": "vn1/tremolo_69.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1986
+    },
+    {
+     "midi": 72,
+     "file": "vn1/tremolo_72.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2004
+    },
+    {
+     "midi": 76,
+     "file": "vn1/tremolo_76.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2006
+    },
+    {
+     "midi": 79,
+     "file": "vn1/tremolo_79.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2016
+    },
+    {
+     "midi": 83,
+     "file": "vn1/tremolo_83.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1983
+    },
+    {
+     "midi": 86,
+     "file": "vn1/tremolo_86.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2006
+    }
+   ],
+   "pizz": [
+    {
+     "midi": 55,
+     "file": "vn1/pizz_55.flac",
+     "rms": 0.0246
+    },
+    {
+     "midi": 62,
+     "file": "vn1/pizz_62.flac",
+     "rms": 0.0282
+    },
+    {
+     "midi": 69,
+     "file": "vn1/pizz_69.flac",
+     "rms": 0.0789
+    },
+    {
+     "midi": 76,
+     "file": "vn1/pizz_76.flac",
+     "rms": 0.0396
+    },
+    {
+     "midi": 83,
+     "file": "vn1/pizz_83.flac",
+     "rms": 0.0961
+    }
+   ]
+  },
+  "va": {
+   "legato_p": [
+    {
+     "midi": 55,
+     "file": "va/legato_f_55.flac",
+     "loopStart": 0.74998,
+     "loopEnd": 2.74998,
+     "rms": 0.1719
+    },
+    {
+     "midi": 59,
+     "file": "va/legato_f_59.flac",
+     "loopStart": 0.74998,
+     "loopEnd": 2.74998,
+     "rms": 0.1706
+    },
+    {
+     "midi": 62,
+     "file": "va/legato_f_62.flac",
+     "loopStart": 0.79998,
+     "loopEnd": 2.79998,
+     "rms": 0.1712
+    },
+    {
+     "midi": 65,
+     "file": "va/legato_f_65.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.1801
+    },
+    {
+     "midi": 69,
+     "file": "va/legato_f_69.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.1695
+    },
+    {
+     "midi": 72,
+     "file": "va/legato_f_72.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.1749
+    }
+   ],
+   "legato_f": [
+    {
+     "midi": 55,
+     "file": "va/legato_f_55.flac",
+     "loopStart": 0.74998,
+     "loopEnd": 2.74998,
+     "rms": 0.1719
+    },
+    {
+     "midi": 59,
+     "file": "va/legato_f_59.flac",
+     "loopStart": 0.74998,
+     "loopEnd": 2.74998,
+     "rms": 0.1706
+    },
+    {
+     "midi": 62,
+     "file": "va/legato_f_62.flac",
+     "loopStart": 0.79998,
+     "loopEnd": 2.79998,
+     "rms": 0.1712
+    },
+    {
+     "midi": 65,
+     "file": "va/legato_f_65.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.1801
+    },
+    {
+     "midi": 69,
+     "file": "va/legato_f_69.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.1695
+    },
+    {
+     "midi": 72,
+     "file": "va/legato_f_72.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.1749
+    }
+   ],
+   "tremolo": [
+    {
+     "midi": 55,
+     "file": "va/tremolo_55.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2014
+    },
+    {
+     "midi": 59,
+     "file": "va/tremolo_59.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2001
+    },
+    {
+     "midi": 62,
+     "file": "va/tremolo_62.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1988
+    },
+    {
+     "midi": 65,
+     "file": "va/tremolo_65.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.199
+    },
+    {
+     "midi": 69,
+     "file": "va/tremolo_69.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2006
+    },
+    {
+     "midi": 72,
+     "file": "va/tremolo_72.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1993
+    }
+   ],
+   "pizz": [
+    {
+     "midi": 48,
+     "file": "va/pizz_48.flac",
+     "rms": 0.0346
+    },
+    {
+     "midi": 52,
+     "file": "va/pizz_52.flac",
+     "rms": 0.0313
+    },
+    {
+     "midi": 55,
+     "file": "va/pizz_55.flac",
+     "rms": 0.0216
+    },
+    {
+     "midi": 59,
+     "file": "va/pizz_59.flac",
+     "rms": 0.0231
+    },
+    {
+     "midi": 62,
+     "file": "va/pizz_62.flac",
+     "rms": 0.0129
+    },
+    {
+     "midi": 65,
+     "file": "va/pizz_65.flac",
+     "rms": 0.0568
+    },
+    {
+     "midi": 69,
+     "file": "va/pizz_69.flac",
+     "rms": 0.0736
+    },
+    {
+     "midi": 72,
+     "file": "va/pizz_72.flac",
+     "rms": 0.0366
+    },
+    {
+     "midi": 76,
+     "file": "va/pizz_76.flac",
+     "rms": 0.0459
+    },
+    {
+     "midi": 79,
+     "file": "va/pizz_79.flac",
+     "rms": 0.0816
+    }
+   ]
+  },
+  "vc": {
+   "legato_p": [
+    {
+     "midi": 43,
+     "file": "vc/legato_f_43.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.1995
+    },
+    {
+     "midi": 47,
+     "file": "vc/legato_f_47.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.202
+    },
+    {
+     "midi": 50,
+     "file": "vc/legato_f_50.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.1998
+    },
+    {
+     "midi": 53,
+     "file": "vc/legato_f_53.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.2004
+    },
+    {
+     "midi": 57,
+     "file": "vc/legato_f_57.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.2055
+    },
+    {
+     "midi": 60,
+     "file": "vc/legato_f_60.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.2057
+    },
+    {
+     "midi": 64,
+     "file": "vc/legato_f_64.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.195
+    }
+   ],
+   "legato_f": [
+    {
+     "midi": 43,
+     "file": "vc/legato_f_43.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.1995
+    },
+    {
+     "midi": 47,
+     "file": "vc/legato_f_47.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.202
+    },
+    {
+     "midi": 50,
+     "file": "vc/legato_f_50.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.1998
+    },
+    {
+     "midi": 53,
+     "file": "vc/legato_f_53.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.2004
+    },
+    {
+     "midi": 57,
+     "file": "vc/legato_f_57.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.2055
+    },
+    {
+     "midi": 60,
+     "file": "vc/legato_f_60.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.2057
+    },
+    {
+     "midi": 64,
+     "file": "vc/legato_f_64.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.195
+    }
+   ],
+   "tremolo": [
+    {
+     "midi": 43,
+     "file": "vc/tremolo_43.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1997
+    },
+    {
+     "midi": 50,
+     "file": "vc/tremolo_50.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1992
+    },
+    {
+     "midi": 53,
+     "file": "vc/tremolo_53.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2002
+    },
+    {
+     "midi": 57,
+     "file": "vc/tremolo_57.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2007
+    },
+    {
+     "midi": 60,
+     "file": "vc/tremolo_60.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1991
+    },
+    {
+     "midi": 64,
+     "file": "vc/tremolo_64.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1996
+    }
+   ],
+   "pizz": [
+    {
+     "midi": 36,
+     "file": "vc/pizz_36.flac",
+     "rms": 0.0594
+    },
+    {
+     "midi": 43,
+     "file": "vc/pizz_43.flac",
+     "rms": 0.0448
+    },
+    {
+     "midi": 50,
+     "file": "vc/pizz_50.flac",
+     "rms": 0.0377
+    },
+    {
+     "midi": 57,
+     "file": "vc/pizz_57.flac",
+     "rms": 0.0563
+    },
+    {
+     "midi": 64,
+     "file": "vc/pizz_64.flac",
+     "rms": 0.0316
+    }
+   ]
+  },
+  "cb": {
+   "legato_p": [
+    {
+     "midi": 34,
+     "file": "cb/legato_f_34.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.1981
+    },
+    {
+     "midi": 38,
+     "file": "cb/legato_f_38.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.1984
+    },
+    {
+     "midi": 42,
+     "file": "cb/legato_f_42.flac",
+     "loopStart": 0.74998,
+     "loopEnd": 2.74998,
+     "rms": 0.2013
+    },
+    {
+     "midi": 45,
+     "file": "cb/legato_f_45.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.2
+    },
+    {
+     "midi": 49,
+     "file": "cb/legato_f_49.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.201
+    },
+    {
+     "midi": 52,
+     "file": "cb/legato_f_52.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.2054
+    }
+   ],
+   "legato_f": [
+    {
+     "midi": 34,
+     "file": "cb/legato_f_34.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.1981
+    },
+    {
+     "midi": 38,
+     "file": "cb/legato_f_38.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.1984
+    },
+    {
+     "midi": 42,
+     "file": "cb/legato_f_42.flac",
+     "loopStart": 0.74998,
+     "loopEnd": 2.74998,
+     "rms": 0.2013
+    },
+    {
+     "midi": 45,
+     "file": "cb/legato_f_45.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.2
+    },
+    {
+     "midi": 49,
+     "file": "cb/legato_f_49.flac",
+     "loopStart": 0.69998,
+     "loopEnd": 2.69998,
+     "rms": 0.201
+    },
+    {
+     "midi": 52,
+     "file": "cb/legato_f_52.flac",
+     "loopStart": 0.99998,
+     "loopEnd": 2.99998,
+     "rms": 0.2054
+    }
+   ],
+   "tremolo": [
+    {
+     "midi": 36,
+     "file": "cb/tremolo_36.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1996
+    },
+    {
+     "midi": 40,
+     "file": "cb/tremolo_40.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.2001
+    },
+    {
+     "midi": 44,
+     "file": "cb/tremolo_44.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1989
+    },
+    {
+     "midi": 52,
+     "file": "cb/tremolo_52.flac",
+     "loopStart": 0.15,
+     "loopEnd": 2.15,
+     "rms": 0.1988
+    }
+   ],
+   "pizz": [
+    {
+     "midi": 28,
+     "file": "cb/pizz_28.flac",
+     "rms": 0.0669
+    },
+    {
+     "midi": 31,
+     "file": "cb/pizz_31.flac",
+     "rms": 0.0639
+    },
+    {
+     "midi": 34,
+     "file": "cb/pizz_34.flac",
+     "rms": 0.0484
+    },
+    {
+     "midi": 36,
+     "file": "cb/pizz_36.flac",
+     "rms": 0.046
+    },
+    {
+     "midi": 40,
+     "file": "cb/pizz_40.flac",
+     "rms": 0.0352
+    },
+    {
+     "midi": 44,
+     "file": "cb/pizz_44.flac",
+     "rms": 0.025
+    },
+    {
+     "midi": 45,
+     "file": "cb/pizz_45.flac",
+     "rms": 0.0318
+    },
+    {
+     "midi": 49,
+     "file": "cb/pizz_49.flac",
+     "rms": 0.0332
+    },
+    {
+     "midi": 52,
+     "file": "cb/pizz_52.flac",
+     "rms": 0.0643
+    },
+    {
+     "midi": 56,
+     "file": "cb/pizz_56.flac",
+     "rms": 0.0326
+    }
+   ]
+  }
+ },
+ "sources": {
+  "vn1/legato_f_57.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/susVib/VlnEns_susVib_A2_v2.wav",
+  "vn1/legato_f_62.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/susVib/VlnEns_susVib_D3_v2.wav",
+  "vn1/legato_f_66.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/susVib/VlnEns_susVib_F%233_v2.wav",
+  "vn1/legato_f_69.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/susVib/VlnEns_susVib_A3_v2.wav",
+  "vn1/legato_f_72.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/susVib/VlnEns_susVib_C4_v2.wav",
+  "vn1/legato_f_76.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/susVib/VlnEns_susVib_E4_v2.wav",
+  "vn1/legato_f_79.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/susVib/VlnEns_susVib_G4_v2.wav",
+  "vn1/legato_f_83.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/susVib/VlnEns_susVib_B4_v2.wav",
+  "vn1/legato_f_86.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/susVib/VlnEns_susVib_D5_v2.wav",
+  "vn1/tremolo_57.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/Trem/VlnEns_Trem_A2_v2.wav",
+  "vn1/tremolo_62.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/Trem/VlnEns_Trem_D3_v2.wav",
+  "vn1/tremolo_69.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/Trem/VlnEns_Trem_A3_v2.wav",
+  "vn1/tremolo_72.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/Trem/VlnEns_Trem_C4_v2.wav",
+  "vn1/tremolo_76.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/Trem/VlnEns_Trem_E4_v2.wav",
+  "vn1/tremolo_79.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/Trem/VlnEns_Trem_G4_v2.wav",
+  "vn1/tremolo_83.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/Trem/VlnEns_Trem_B4_v2.wav",
+  "vn1/tremolo_86.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/Trem/VlnEns_Trem_D5_v2.wav",
+  "vn1/pizz_55.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/Pizz/VlnEns_Pizz_G2_v2_rr1.wav",
+  "vn1/pizz_62.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/Pizz/VlnEns_Pizz_D3_v2_rr1.wav",
+  "vn1/pizz_69.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/Pizz/VlnEns_Pizz_A3_v2_rr1.wav",
+  "vn1/pizz_76.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/Pizz/VlnEns_Pizz_E4_v2_rr1.wav",
+  "vn1/pizz_83.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Violin%20Section/Pizz/VlnEns_Pizz_B4_v2_rr1.wav",
+  "va/legato_f_55.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/susvib/ViolaEns_susvib_G2_v2_1.wav",
+  "va/legato_f_59.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/susvib/ViolaEns_susvib_B2_v2_1.wav",
+  "va/legato_f_62.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/susvib/ViolaEns_susvib_D3_v2_1.wav",
+  "va/legato_f_65.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/susvib/ViolaEns_susvib_F3_v2_1.wav",
+  "va/legato_f_69.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/susvib/ViolaEns_susvib_A3_v2_1.wav",
+  "va/legato_f_72.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/susvib/ViolaEns_susvib_C4_v2_1.wav",
+  "va/tremolo_55.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/trem/Violas_trem_G2_v2_rr1.wav",
+  "va/tremolo_59.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/trem/Violas_trem_B2_v2_rr1.wav",
+  "va/tremolo_62.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/trem/Violas_trem_D3_v2_rr1.wav",
+  "va/tremolo_65.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/trem/Violas_trem_F3_v2_rr1.wav",
+  "va/tremolo_69.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/trem/Violas_trem_A3_v2_rr1.wav",
+  "va/tremolo_72.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/trem/Violas_trem_C4_v2_rr1.wav",
+  "va/pizz_48.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/pizz/ViolaEns_pizz_C2_v2_rr1.wav",
+  "va/pizz_52.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/pizz/ViolaEns_pizz_E2_v2_rr1.wav",
+  "va/pizz_55.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/pizz/ViolaEns_pizz_G2_v2_rr1.wav",
+  "va/pizz_59.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/pizz/ViolaEns_pizz_B2_v2_rr1.wav",
+  "va/pizz_62.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/pizz/ViolaEns_pizz_D3_v2_rr1.wav",
+  "va/pizz_65.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/pizz/ViolaEns_pizz_F3_v2_rr1.wav",
+  "va/pizz_69.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/pizz/ViolaEns_pizz_A3_v2_rr1.wav",
+  "va/pizz_72.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/pizz/ViolaEns_pizz_C4_v2_rr1.wav",
+  "va/pizz_76.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/pizz/ViolaEns_pizz_E4_v2_rr1.wav",
+  "va/pizz_79.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Viola%20Section/pizz/ViolaEns_pizz_G4_v2_rr1.wav",
+  "vc/legato_f_43.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_G1_v3_1.wav",
+  "vc/legato_f_47.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_B1_v3_1.wav",
+  "vc/legato_f_50.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_D2_v3_1.wav",
+  "vc/legato_f_53.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_F2_v3_1.wav",
+  "vc/legato_f_57.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_A2_v3_1.wav",
+  "vc/legato_f_60.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_C3_v3_1.wav",
+  "vc/legato_f_64.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/susvib/susvib_E3_v3_1.wav",
+  "vc/tremolo_43.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/trem/trem_G1_v2_1.wav",
+  "vc/tremolo_50.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/trem/trem_D2_v2_1.wav",
+  "vc/tremolo_53.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/trem/trem_F2_v2_1.wav",
+  "vc/tremolo_57.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/trem/trem_A2_v2_1.wav",
+  "vc/tremolo_60.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/trem/trem_C3_v2_1.wav",
+  "vc/tremolo_64.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/trem/trem_E3_v2_1.wav",
+  "vc/pizz_36.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/pizzT/pizzT_C1_v2_RR1.wav",
+  "vc/pizz_43.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/pizzT/pizzT_G1_v2_RR1.wav",
+  "vc/pizz_50.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/pizzT/pizzT_D2_v2_RR1.wav",
+  "vc/pizz_57.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/pizzT/pizzT_A2_v2_RR1.wav",
+  "vc/pizz_64.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Cello%20Section/pizzT/pizzT_E3_v2_RR1.wav",
+  "cb/legato_f_34.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/SusVib/BKCtbss_SusVib_A%230_v3_rr1.wav",
+  "cb/legato_f_38.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/SusVib/BKCtbss_SusVib_D1_v3_rr1.wav",
+  "cb/legato_f_42.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/SusVib/BKCtbss_SusVib_F%231_v3_rr1.wav",
+  "cb/legato_f_45.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/SusVib/BKCtbss_SusVib_A1_v3_rr1.wav",
+  "cb/legato_f_49.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/SusVib/BKCtbss_SusVib_C%232_v3_rr1.wav",
+  "cb/legato_f_52.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/SusVib/BKCtbss_SusVib_E2_v3_rr1.wav",
+  "cb/tremolo_36.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/Trem/BKCtbss_Trem_C1_v2_rr1.wav",
+  "cb/tremolo_40.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/Trem/BKCtbss_Trem_E1_v2_rr1.wav",
+  "cb/tremolo_44.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/Trem/BKCtbss_Trem_G%231_v2_rr1.wav",
+  "cb/tremolo_52.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/Trem/BKCtbss_Trem_E2_v2_rr1.wav",
+  "cb/pizz_28.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/Pizz/BKCtbss_Pizz_E0_v3_rr1.wav",
+  "cb/pizz_31.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/Pizz/BKCtbss_Pizz_G0_v3_rr1.wav",
+  "cb/pizz_34.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/Pizz/BKCtbss_Pizz_A%230_v3_rr1.wav",
+  "cb/pizz_36.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/Pizz/BKCtbss_Pizz_C1_v3_rr1.wav",
+  "cb/pizz_40.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/Pizz/BKCtbss_Pizz_E1_v3_rr1.wav",
+  "cb/pizz_44.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/Pizz/BKCtbss_Pizz_G%231_v1_rr1.wav",
+  "cb/pizz_45.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/Pizz/BKCtbss_Pizz_A1_v1_rr1.wav",
+  "cb/pizz_49.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/Pizz/BKCtbss_Pizz_C%232_v1_rr1.wav",
+  "cb/pizz_52.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/Pizz/BKCtbss_Pizz_E2_v1_rr1.wav",
+  "cb/pizz_56.flac": "https://raw.githubusercontent.com/sgossner/VSCO-2-CE/440300901dfe9275fd84e0b7763af1f8443ae62e/Strings/Solo%20Contrabass/Pizz/BKCtbss_Pizz_G%232_v1_rr1.wav"
+ }
+}
