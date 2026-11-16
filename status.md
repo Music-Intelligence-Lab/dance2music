@@ -1164,3 +1164,18 @@
   plus browser/media recording, and exploration verifies 59 Python tests +
   32 subtests. Governance directories match 1ee972f on every branch.
   Ableton AST refresh completed: 1,743 nodes, 3,180 edges, 166 communities.
+
+## 2026-11-16 - String Octave experiment page
+
+- State: Added on branch experiments/string-octave; user authorized commit, push and PR.
+- Changes: New static page web/experiments/string-octave/ (open a video or use the
+  camera; the dancer's body arranges a four-voice string score by the Rule of the
+  Octave, played in the browser; optional Web MIDI out). One linking sentence in
+  web/live/index.html. New tests/string_octave.test.mjs (11 tests).
+- Samples: 82 FLAC files (7.5 MB) built from Versilian VSCO-2 CE (CC0), credited
+  in the page README. Solo double bass, no harp, one dynamic layer.
+- Verification: 11 Node tests pass; served statically, a video ran to the end in
+  Chrome. Not checked: camera path with a real camera, live MIDI into a DAW,
+  Safari/Firefox, listening by a person.
+- Outstanding: graphify is not installed on this machine, so the code graph was
+  not refreshed.
