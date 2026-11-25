@@ -3,6 +3,7 @@
 The browser translation is now available locally:
 
 - [Play the instrument in JavaScript](#play-anthonys-instrument-in-the-browser)
+- [Save a smaller performance recording](#save-a-smaller-performance-recording)
 - [Use the iPhone camera and sound with --phone](#iphone-camera-and-sound)
 - [Movement Dictionary: count body quarter and half turns](#movement-dictionary-body-quarter-and-half-turns)
 
@@ -17,6 +18,19 @@ Start here for the current native Python instrument:
 - [Play one note in Ableton](#play-one-root-note-in-ableton)
 - [Safari website MIDI through your Mac's IAC ports](#safari-on-macos-iac-midi)
 - [Run on macOS](#native-instrument-on-macos)
+
+## Save a smaller performance recording
+
+In the live app, press **Start**, open **Recording**, choose **video + sound**
+and press **Record**. Press **Stop recording** to download the ZIP. The
+compact H.264 export is automatic for sources above 640 pixels. A 1080p
+camera produces a 720p recording. The camera resolution still controls the
+detail available to the live tracker.
+
+Open the video for playback, or use `observations.jsonl` for the pose, hand
+and gesture results captured during the take. Choose **sound only** when you
+want the performance audio and movement data without a video track.
+See the [recording format and compression measurements](browser-recording.md#video-recording-size-and-analysis).
 
 ## Movement Dictionary body quarter and half turns
 

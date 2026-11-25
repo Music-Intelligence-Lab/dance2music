@@ -1,5 +1,29 @@
 # Project Status
 
+## 2026-11-25 — Smaller saved performance videos
+
+Implemented locally in the live app, Movement Dictionary and Spectral Bass.
+H.264 recordings of sources over 640 pixels on the long side now use up to
+1280 pixels at 3.5 Mb/s. The encoder operates on a separate canvas after
+live tracking. The live bundle records the requested video bitrate and the
+encoded dimensions alongside the original observation geometry.
+
+Across six dance excerpts, video occupied 15.50 MB versus 26.26 MB with the
+old settings. Median movement-label agreement on three body-analysis clips
+was 94.1–97.8%. We retained the former settings for small sources and WebM
+after comparing decoded pose, hand detections and gestures. Individual
+redetected gestures and joint positions varied, particularly where two
+dancers overlapped. The [benchmark and reproduction command](docs/browser-recording.md#how-the-settings-were-tested)
+record the thresholds and measured limitations.
+
+The opt-in body benchmark ran against a real recorded take and passed Ruff,
+formatting and mypy checks. The three experiment JavaScript suites passed
+26 tests. Browser recording checks exercised real encoding, playback, ZIP
+integrity, original observation dimensions, audio-only takes and fallback
+codec sizing. Automated download events were intermittent on installed
+Chromium browsers, including with the previous recorder. The AST graph was
+refreshed locally. Safari and Firefox device playback remain unverified.
+
 ## 2026-10-28 - Integrate Anthony features with the current upstream UI
 
 - State: Local branch `codex/anthony-upstream-integration`, reviewed in the separate

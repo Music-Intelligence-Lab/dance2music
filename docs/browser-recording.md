@@ -88,6 +88,95 @@ cancelled. Sound-unlock taps preserve this capture mode. A dedicated microphone
 status beside the recording controls stays visible through packaging and the
 completed download, including a warning when no microphone file is available.
 
+## Video recording size and analysis
+
+With **Save → video + sound** and H.264, the recorder downsizes the saved picture to at
+most 1280 pixels on its longer side and requests 3.5 Mb/s video. A 1920×1080
+input produces 1280×720. Portrait inputs keep their orientation. Inputs
+already at or below 640 pixels on the long side retain the 6 Mb/s target
+because further compression removed detail needed to track hands in small
+frames. These targets also apply to the Movement Dictionary and Spectral Bass
+video downloads. The browser chooses the available codec and actual bitrate.
+WebM and browser-selected generic formats keep their previous settings.
+
+The main app still analyzes each original camera or file frame. For the pose,
+hand gestures and events observed during the performance, read
+`observations.jsonl` in the ZIP. The saved video lets you review the take or
+run a new analysis. A second detector run can place joints differently,
+particularly with overlapping dancers or brief finger signs. For takes
+that only need audio and the original analysis, **Save → sound only** omits
+the video track.
+
+### How the settings were tested
+
+The previous main recorder capped the long side at 1920 pixels and requested
+6 Mb/s. We compared that profile with H.264 and VP9 encodes, testing long
+edges from 320 to 1920 pixels and video rates from 125 kb/s to 5 Mb/s. We
+kept the frame rate at 30 fps. The body comparison used six seconds each
+from `dance2music-20261006-135941.mp4` at 95 s,
+`VIDEO-2026-09-21-10-49-57.mp4` at 33 s and `IMG_0683.MOV` at 27 s. Each
+decoded frame went through the Full Pose Landmarker and the project's
+`dance_pose.signals` movement-label and energy calculations.
+
+We compared reference-pose detection, 95th-percentile displacement of visible
+joints in normalized image coordinates, movement-label agreement and mean
+absolute energy difference. Initial targets were 98% pose retention, 0.03
+joint displacement, 90% label agreement and 0.10 energy difference. We also
+measured variation between four encodes using the previous settings. On the
+studio excerpt those encodes themselves could miss the initial pose targets.
+Finalists were compared at keyframe intervals of 30, 60 and 90 frames.
+
+The hand check used the native instrument's alternating wrist crops and
+Gesture Recognizer on six excerpts (1,078 frames), including a held open
+palm. It counted fresh detections, named gestures on matching frames, and
+the palm observations that survived the instrument's gesture confirmation
+time. The inputs were `VIDEO-2026-09-21-10-50-03.mp4` at 12 s, the composited
+app recording at 62, 245 and 338 s, and `IMG_0683.MOV` at 15 and 25 s.
+We also encoded a separate two-dancer excerpt (the same MOV at 36 s) with Chrome MediaRecorder,
+including audio, and matched decoded frames by source frame number. The tests
+used FFmpeg 9.1, MediaPipe 0.10.35 and OpenCV 4.10. They compare analysis
+with the previous recorder and with source frames. The dancers were not
+manually annotated.
+
+| H.264 export on sources larger than 640 px | Result |
+|---|---|
+| 1280 px, 3.5 Mb/s (selected) | Six hand-analysis excerpts occupied 15.50 MB, down from 26.26 MB of video. On the three body excerpts, median movement-label agreement was 94.1–97.8%, energy difference was 0.014–0.062, and pose retention was 96.6–100%. |
+| 1280 px, 3.25 Mb/s | The phone clip's median energy difference reached 0.1011, just above the 0.10 target. |
+| 1152 px, 3 Mb/s | Passed the body and held-palm sweep, but retained 97 of 111 source pose detections on the separate two-dancer Chrome clip. The selected profile retained 106. The previous recorder retained 105. |
+| 640 px, 0.25 Mb/s | Fresh studio hand detections fell from 113 to 18 in 180 frames. |
+
+At the selected setting, the hand tracker found 533 fresh hands versus 532
+at the previous setting, with 438 on matching frames. It reproduced 48 of
+69 raw named gestures on the same frame. An alternate encode at the old rate
+reproduced 54. The median count of confirmed open-palm observations was 28
+across three encodes, within the old profile's 26–36 range.
+
+Chrome 147 produced a 1.88 MB recording, including audio, on the four-second
+portrait excerpt with two overlapping dancers. The prior setting produced
+3.19 MB. Even when both videos yielded similar pose detection counts, joint
+positions and which hand was tracked could differ. Total ZIP savings also
+depend on how much audio, pose, hand and watch data the take contains.
+
+We tested a separate set of 640-pixel source clips against a 6 Mb/s reference
+at the *same* resolution. None of the targets from 0.5 to 5.5 Mb/s met the
+body criteria across all three excerpts. This is why the recorder keeps a
+separate bitrate for those inputs.
+
+On the studio hand excerpt, VP9 fresh hand detections fell from 128 to
+116 and VP8 fell from 120 to 99 against each codec's own previous 6 Mb/s
+encode. Both exceeded the five-percentage-point tolerance. The compact
+settings apply when the app can explicitly request H.264.
+
+To repeat the body comparison with your own footage, use the local Full
+model from the offline setup and an environment with MediaPipe Tasks,
+OpenCV, NumPy, SciPy and FFmpeg. Supply the clip and the start time in
+seconds. Add another `--profile` to compare another encoder setting.
+
+```sh
+python tests/benchmark_recording_compression.py --clip videos/dancer.mp4 10 \
+  --profile h264:1280:3500 --profile h264:1152:3000 --gop 30 --gop 60 --gop 90
+```
+
 ## Version 1 contract
 
 The manifest has `schema: "dance2music.recording"`, `schema_version: 1`, a UUID
@@ -116,7 +205,10 @@ Watch artifacts also have `path`, `size_bytes`, and `sha256` entries under
 
 `media` records the actual MediaRecorder MIME type, audio-only selection,
 encoded dimensions, nominal canvas rate (30 Hz), compositing and burned-in
-overlays, instrument audio source, and any MediaRecorder error. `complete: false`
+overlays, instrument audio source, and any MediaRecorder error. New recordings
+include `target_video_bits_per_second` (null for sound only or when the browser
+chooses the recording format and bitrate). Source dimensions
+are in the configuration history. `complete: false`
 marks interrupted media; it does not turn previous valid observations into
 missing values. An empty or very short take is allowed and does not imply
 enough data for an embedding.

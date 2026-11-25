@@ -5,6 +5,7 @@ import { SP, controls, centroid, Strokes, SOURCES, KNOBS, knobs, defaultRouting,
 import { Hands } from './hands.js';
 import { Sound } from './sound.js';
 import { View, noteName } from './view.js';
+import { configureRecordingCanvas } from '../../live/recording-profile.js';
 
 const MP = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.0.1/';
 const MODEL = m => `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_${m}/float16/latest/pose_landmarker_${m}.task`;
@@ -163,13 +164,14 @@ $('cal').onclick = () => {
 const comp = document.createElement('canvas');
 async function toggleRecord() {
   if (!recorder) {
-    comp.width = v.videoWidth; comp.height = v.videoHeight; const g = comp.getContext('2d');
+    const type = ['video/mp4;codecs=avc1,mp4a.40.2', 'video/webm;codecs=vp9,opus', 'video/webm'].find(t => MediaRecorder.isTypeSupported(t)) || '';
+    const videoBitsPerSecond = configureRecordingCanvas(comp, v.videoWidth, v.videoHeight, type, Infinity);
+    const g = comp.getContext('2d');
     const paint = () => { if (!recorder) return; const m = $('mirror').value === '1';
       g.save(); if (m) { g.translate(comp.width, 0); g.scale(-1, 1); } g.drawImage(v, 0, 0, comp.width, comp.height); g.restore();
       g.drawImage(cv, 0, 0, comp.width, comp.height); requestAnimationFrame(paint); };
     const streamOut = new MediaStream([...comp.captureStream(30).getVideoTracks(), ...sound.rec.stream.getAudioTracks()]);
-    const type = ['video/mp4;codecs=avc1,mp4a.40.2', 'video/webm;codecs=vp9,opus', 'video/webm'].find(t => MediaRecorder.isTypeSupported(t)) || '';
-    recorder = new MediaRecorder(streamOut, type ? { mimeType: type, videoBitsPerSecond: 6e6 } : undefined);
+    recorder = new MediaRecorder(streamOut, type ? { mimeType: type, videoBitsPerSecond } : undefined);
     chunks = []; rows.length = 0; recT0 = performance.now() / 1000;
     recorder.ondataavailable = e => e.data.size && chunks.push(e.data);
     recorder.start(1000); paint();

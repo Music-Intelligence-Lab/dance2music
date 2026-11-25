@@ -7,6 +7,7 @@
 import { Observations } from './observations.js';
 import { acquireMicrophoneAudioSession } from './audio-session.js';
 import { WatchCapture } from './watches.js';
+import { configureRecordingCanvas } from './recording-profile.js';
 
 const TYPES = ['video/mp4;codecs=avc1,mp4a.40.2', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'];
 const ATYPES = ['audio/mp4;codecs=mp4a.40.2', 'audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
@@ -92,14 +93,14 @@ export class Recorder {
       }
     }
     // Own cloned tracks; stopping a recording must not stop the instrument.
-    let stream, type;
+    let stream, type, videoBitsPerSecond = null;
     try {
       const audio = new MediaStream(engine.recordStream().getAudioTracks().map(track => track.clone()));
       this.ownedTracks = audio.getTracks();
       if (audioOnly) { stream = audio; type = pick(ATYPES); }
       else {
-        const W = video.videoWidth, H = video.videoHeight, scale = Math.min(1, 1920 / Math.max(W, H));
-        this.comp.width = Math.round(W * scale / 2) * 2; this.comp.height = Math.round(H * scale / 2) * 2;
+        type = pick(TYPES);
+        videoBitsPerSecond = configureRecordingCanvas(this.comp, video.videoWidth, video.videoHeight, type);
         this.paint = () => {
           const g = this.cg, w = this.comp.width, h = this.comp.height;
           g.save(); if (mirror()) { g.translate(w, 0); g.scale(-1, 1); }
@@ -117,10 +118,12 @@ export class Recorder {
         const videoTracks = this.comp.captureStream(30).getVideoTracks();
         this.ownedTracks.push(...videoTracks);
         stream = new MediaStream([...videoTracks, ...audio.getAudioTracks()]);
-        type = pick(TYPES); this.paint(); this.loopStart = loop;
+        this.paint(); this.loopStart = loop;
       }
       this.chunks = []; this.mediaError = null; this.endMs = null;
-      this.rec = new MediaRecorder(stream, type ? { mimeType: type, videoBitsPerSecond: 6e6, audioBitsPerSecond: 192e3 } : undefined);
+      const options = type ? { mimeType: type, audioBitsPerSecond: 192e3 } : undefined;
+      if (!audioOnly && options) options.videoBitsPerSecond = videoBitsPerSecond;
+      this.rec = new MediaRecorder(stream, options);
       this.type = this.rec.mimeType || type || (audioOnly ? 'audio/webm' : 'video/webm');
       this.rec.ondataavailable = e => { if (e.data && e.data.size) this.chunks.push(e.data); };
       this.rec.onerror = event => { this.mediaError = event.error?.message || 'Media recording interrupted'; };
@@ -132,6 +135,7 @@ export class Recorder {
       this.observations = new Observations(this.t0, { media: { mime_type: this.type,
         audio_only: audioOnly, width: audioOnly ? null : this.comp.width,
         height: audioOnly ? null : this.comp.height, nominal_fps: audioOnly ? null : 30,
+        target_video_bits_per_second: videoBitsPerSecond,
         composited: !audioOnly, audio_source: 'instrument_output', overlays_burned_in: !audioOnly } });
       this.observations.configuration(typeof configuration === 'function' ? configuration() : configuration, this.t0);
       this.rec.start(1000);

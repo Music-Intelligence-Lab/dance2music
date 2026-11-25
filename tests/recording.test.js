@@ -1,6 +1,7 @@
 import { Observations, snapshotPose, snapshotHandInference, handDisplayState } from '../web/live/observations.js';
 import { Hands } from '../web/live/hands.js';
 import { Recorder, packageRecording } from '../web/live/recorder.js';
+import { configureRecordingCanvas } from '../web/live/recording-profile.js';
 import { modelAsset } from '../web/live/model-assets.js';
 import { Engine } from '../web/live/audio.js';
 import { watchTests } from './watches.test.js';
@@ -15,7 +16,7 @@ const handResult = () => ({ landmarks: [Array.from({ length: 21 }, (_, i) => lan
   worldLandmarks: [Array.from({ length: 21 }, (_, i) => ({ x: i / 1000, y: i / 2000, z: -i / 3000 }))],
   handedness: [[{ index: 0, categoryName: 'Left', score: 0.94 }]],
   gestures: [[{ index: 1, categoryName: 'Open_Palm', score: 0.8 }]] });
-const configuration = mode => ({ source: { id: 'fixture', type: 'camera', width: 640, height: 480 },
+const configuration = (mode, width = 640, height = 480) => ({ source: { id: 'fixture', type: 'camera', width, height },
   pose_model: { family: 'PoseLandmarker', quality: 'full', asset_sha256: 'a'.repeat(64),
     runtime: { version: 'fixture' }, delegate: 'cpu', running_mode: 'video', num_poses: 1,
     detection_threshold: 0.5, presence_threshold: 0.5, tracking_threshold: 0.5, segmentation_masks: false },
@@ -249,7 +250,7 @@ export async function runTests() {
   passed.push('hand crop/depth/world/category preservation');
 
   const video = document.createElement('video');
-  const canvas = document.createElement('canvas'); canvas.width = 640; canvas.height = 480;
+  const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 2048;
   const g = canvas.getContext('2d'); g.fillStyle = '#24b'; g.fillRect(0, 0, 640, 480);
   const source = canvas.captureStream(30); video.srcObject = source; video.muted = true;
   const painter = setInterval(() => { g.fillStyle = `hsl(${performance.now() % 360} 60% 50%)`; g.fillRect(0, 0, 640, 480); }, 30);
@@ -315,14 +316,34 @@ export async function runTests() {
   osc.connect(dest); osc.start(); await ctx.resume();
   const engine = { recordStream: () => dest.stream };
   const recorder = new Recorder();
+  const expectedLongEdge = 1280, expectedVideoRate = 3_500_000;
+  const avcType = 'video/mp4;codecs=avc1,mp4a.40.2';
+  const outputCanvas = document.createElement('canvas');
+  configureRecordingCanvas(outputCanvas, 2048, 1024, avcType);
+  equal([outputCanvas.width, outputCanvas.height], [expectedLongEdge, expectedLongEdge / 2], 'fit landscape long edge');
+  configureRecordingCanvas(outputCanvas, 321, 241, avcType);
+  equal([outputCanvas.width, outputCanvas.height], [320, 240], 'small odd sources keep their size to the nearest even pixel below');
+  equal(configureRecordingCanvas(outputCanvas, 480, 640, avcType), 6_000_000, 'preserve detail in native 640px camera input');
+  equal(configureRecordingCanvas(outputCanvas, 641, 480, avcType), expectedVideoRate, 'choose bitrate from input size before even rounding');
+  for (const fallback of ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/mp4', '']) {
+    equal(configureRecordingCanvas(outputCanvas, 1024, 2048, fallback), fallback ? 6_000_000 : null,
+      'named fallback keeps previous bitrate and unspecified MIME leaves it to the browser');
+    equal([outputCanvas.width, outputCanvas.height], [960, 1920], 'live fallback keeps previous cap');
+    configureRecordingCanvas(outputCanvas, 1025, 2049, fallback, Infinity);
+    equal([outputCanvas.width, outputCanvas.height], [1025, 2049], 'study fallback keeps exact uncapped dimensions');
+  }
+  const sourceConfig = configuration('off', video.videoWidth, video.videoHeight);
   const options = { engine, video, overlay: canvas, mirror: () => true, label: () => ['C', 'I', 'white'],
-    audioOnly: false, configuration: configuration('off') };
+    audioOnly: false, configuration: sourceConfig };
   await recorder.start(options);
+  const selectedAvc = MediaRecorder.isTypeSupported(avcType);
+  const actualTarget = selectedAvc ? expectedVideoRate : 6_000_000;
+  equal(recorder.rec.videoBitsPerSecond, actualTarget, 'MediaRecorder uses the target bitrate for this codec');
   let overlapRejected = false;
   try { await recorder.start(options); } catch { overlapRejected = true; }
   assert(overlapRejected, 'overlapping start rejected');
   const recordPose = () => recorder.observe({ nowMs: performance.now(), mediaTime: video.currentTime,
-    configuration: configuration('off'), pose: snapshotPose(poseResult()), hands: { status: 'disabled', inferences: [] } });
+    configuration: sourceConfig, pose: snapshotPose(poseResult()), hands: { status: 'disabled', inferences: [] } });
   recordPose(); await wait(350); recordPose();
   const saved = await recorder.stop();
   assert(saved.observations === 2 && !recorder.busy && !recorder.active, 'recording finalized');
@@ -333,9 +354,28 @@ export async function runTests() {
   const playback = document.createElement('video'); playback.muted = true;
   const playbackUrl = URL.createObjectURL(new Blob([files[mediaName]], { type: manifest.media.mime_type }));
   playback.src = playbackUrl; await playback.play();
-  assert(playback.videoWidth === 640 && playback.videoHeight === 480, 'saved video decodes');
+  const encodedLongEdge = selectedAvc ? expectedLongEdge : 1920;
+  const expectedDimensions = [encodedLongEdge / 2, encodedLongEdge];
+  equal([playback.videoWidth, playback.videoHeight], expectedDimensions, 'portrait recording decodes at selected resolution');
+  equal([manifest.media.width, manifest.media.height], expectedDimensions, 'manifest describes encoded video');
+  equal(manifest.media.target_video_bits_per_second, actualTarget, 'manifest records target bitrate');
+  equal([video.videoWidth, video.videoHeight], [1024, 2048], 'analysis input retains source dimensions');
+  equal(manifest.configurations[0].settings.source, sourceConfig.source, 'observations keep original source geometry');
   playback.pause(); URL.revokeObjectURL(playbackUrl);
   passed.push('native video/audio recording, decoded playback, track ownership and overlap guard');
+
+  const NativeRecorder = window.MediaRecorder;
+  let fallbackOptions;
+  window.MediaRecorder = class extends NativeRecorder {
+    static isTypeSupported() { return false; }
+    constructor(stream, options) { super(stream, options); fallbackOptions = options; }
+  };
+  try {
+    await recorder.start(options); await wait(150);
+    const fallback = await unpack(await recorder.stop());
+    assert(fallbackOptions === undefined, 'unspecified MIME leaves all recorder defaults to the browser');
+    equal(fallback.manifest.media.target_video_bits_per_second, null, 'manifest declares no requested fallback bitrate');
+  } finally { window.MediaRecorder = NativeRecorder; }
 
   await recorder.start({ ...options, audioOnly: true }); recordPose(); await wait(150);
   const OriginalWorker = window.Worker;
@@ -349,6 +389,8 @@ export async function runTests() {
   const audioFiles = window.fflate.unzipSync(new Uint8Array(await (await fetch(retried.url)).arrayBuffer()));
   const audioManifest = JSON.parse(new TextDecoder().decode(audioFiles['manifest.json']));
   assert(audioManifest.media.audio_only && audioManifest.observation_count === 1, 'audio-only keeps pose data');
+  equal([audioManifest.media.width, audioManifest.media.height, audioManifest.media.target_video_bits_per_second],
+    [null, null, null], 'audio-only declares no video dimensions or bitrate');
   assert(!recorder.pending, 'retry releases retained bundle input');
   recorder.releaseDownloads();
   passed.push('audio-only, repeat session reset, worker failure, recovery and retry');
