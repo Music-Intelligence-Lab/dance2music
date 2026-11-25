@@ -20,6 +20,11 @@
 //   stageX    where she is across the stage (camera's left 0 … right 1)
 //   near      how close she is to the camera (torso / frame height)
 //   move      whole-body speed 0..1, and `still` (move below AN.stillBelow for AN.stillS)
+//   upL upR   each hand's height against her own hips and head (hips 0 … above the head 1), vyL vyR its
+//             vertical speed (torsos a second, up positive), extL extR how straight the arm is (folded 0.3 … 1),
+//             outL outR how far the hand is from the body's vertical axis (at her side 0.2 … arm's length 1)
+//   fistL fistR  how closed each hand is (0 open … 1 a fist), when the clip's hands were read
+//             (pose.js); held while a hand is out of sight. seenL seenR: read this frame
 //
 // analyze(pose) → { n, t[], sig: {name: Float32Array}, events: [{t, type, …}], dur }
 import { Features, J, REF } from './body/features.js';
@@ -36,13 +41,15 @@ export const AN = {
   floorS: 0.25,                            // smoothing of the floor row (s)
   levelS: 0.15,                            // smoothing of level / top (s)
   footStroke: { vOn: 1.1, vOff: 0.45, turnDeg: 70, minS: 0.1 },   // ankles: a little less eager than wrists
+  fistS: 0.08,                             // smoothing of the fist reading (s)
 };
 
 export const SIGNALS = ['move', 'hands', 'weight', 'time', 'flow', 'space', 'energy', 'height', 'spread', 'lateral',
   'balance', 'instability', 'effort', 'fragility', 'tension', 'grounded', 'openness', 'lean',
   'level', 'top', 'axis', 'fold', 'invert', 'reachUp', 'stageX', 'near', 'still',
   'tilt', 'tiltLeft', 'tiltFwd', 'curve', 'curl', 'bend', 'yaw', 'pitch', 'reach', 'close', 'spin',
-  'spLH', 'spRH', 'spLF', 'spRF', 'spHead', 'hLH', 'hRH', 'hLF', 'hRF', 'feet', 'seen'];
+  'spLH', 'spRH', 'spLF', 'spRF', 'spHead', 'hLH', 'hRH', 'hLF', 'hRF', 'feet', 'seen',
+  'upL', 'upR', 'vyL', 'vyR', 'extL', 'extR', 'outL', 'outR', 'fistL', 'fistR', 'seenL', 'seenR'];
 
 const clip = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const obj = a => a && a.map(p => ({ x: p[0], y: p[1], visibility: p[2] }));
@@ -51,16 +58,18 @@ const wobj = a => a && a.map(p => ({ x: p[0], y: p[1], z: p[2] }));
 // The analysis one frame at a time (a live camera, or a video as it plays):
 //   const A = new Analyzer(width, height);  A.push(image, world, t)  per frame
 // `image` and `world` are the frame's 33 landmarks as arrays ([x, y, visibility] normalised; [x, y, z] metres),
-// or null when no body was found. A itself is the analysis so far: { n, t, sig, events, dur }.
+// or null when no body was found; `hands` (optional) is [left, right], each null or [fist, palm, curl, open].
+// A itself is the analysis so far: { n, t, sig, events, dur }.
 export class Analyzer {
   constructor(width, height, name = 'live', cap = 4096) {
     this.W = width; this.H = height; this.name = name; this.n = 0; this.t = []; this.dur = 0; this.cap = cap;
     this.sig = {}; for (const k of SIGNALS) this.sig[k] = new Float32Array(cap);
     this.events = [];
     const strokes = { lh: new Strokes(), rh: new Strokes(), lf: new Strokes(AN.footStroke), rf: new Strokes(AN.footStroke) };
-    this.st = { F: new Features(), S: new Stability(), D: new Dictionary(), strokes, nearS: 0.5, floor: null, level: 1, top: 1, quietSince: null, still: false, prevT: null };
+    this.st = { F: new Features(), S: new Stability(), D: new Dictionary(), strokes, nearS: 0.5, floor: null, level: 1, top: 1, quietSince: null, still: false, prevT: null, fist: [0, 0] };
+    this.hasHands = false;
   }
-  push(image, world, t) {
+  push(image, world, t, hands = null) {
     const i = this.n, sig = this.sig, events = this.events, W = this.W, H = this.H, st = this.st, { F, S, D, strokes } = st;
     if (i >= this.cap) { this.cap *= 2; for (const k of SIGNALS) { const b = new Float32Array(this.cap); b.set(sig[k]); sig[k] = b; } }
     this.n = i + 1; this.t.push(t); this.dur = t;
@@ -71,7 +80,7 @@ export class Analyzer {
     const s = img ? S.update(img, t, W, H) : null;
     const d = img ? D.update(img, wld, t, W, H) : null;
     const put = (k, v) => { sig[k][i] = Number.isFinite(v) ? v : (i ? sig[k][i - 1] : 0); };
-    if (!f) { for (const k of SIGNALS) sig[k][i] = i ? sig[k][i - 1] : 0; sig.seen[i] = 0; sig.move[i] = 0; return i; }
+    if (!f) { for (const k of SIGNALS) sig[k][i] = i ? sig[k][i - 1] : 0; sig.seen[i] = 0; sig.move[i] = 0; sig.seenL[i] = 0; sig.seenR[i] = 0; sig.vyL[i] = 0; sig.vyR[i] = 0; return i; }
     sig.seen[i] = 1;
     // the body's scale: the torso when it is upright (a fold towards the camera shortens it on screen)
     const L = Math.max(f.L, F.torsoLong.pct(AN.torsoPct));
@@ -115,6 +124,18 @@ export class Analyzer {
     // the higher hand against her own head and hips (posture-relative, so it works on the floor too)
     const nose = f.pos(J.NOSE), wy = Math.min(f.pos(J.L_WR) ? f.pos(J.L_WR)[1] : 1e9, f.pos(J.R_WR) ? f.pos(J.R_WR)[1] : 1e9);
     if (nose && hip !== null && wy < 1e9) put('reachUp', clip((hip - wy) / L / 1.9)); else put('reachUp', NaN);
+    // each hand on its own: height against the hips and the head, vertical speed, how straight the arm is, open or closed
+    [['L', J.L_WR, J.L_EL, J.L_SH], ['R', J.R_WR, J.R_EL, J.R_SH]].forEach(([sd, wj, ej, sj], hk) => {
+      const w = f.pos(wj), ok = w && f.conf(wj) >= 0.5;
+      put('up' + sd, ok && hip !== null ? clip((hip - w[1]) / L / 1.9, -0.4, 1.3) : NaN);
+      sig['vy' + sd][i] = ok ? -f.vel(wj)[1] / L : 0;
+      const d3 = (a, b) => Math.hypot(wld[a].x - wld[b].x, wld[a].y - wld[b].y, wld[a].z - wld[b].z);
+      put('ext' + sd, wld && ok ? clip(d3(sj, wj) / Math.max(1e-6, d3(sj, ej) + d3(ej, wj))) : NaN);
+      put('out' + sd, wld && ok ? clip(Math.hypot(wld[wj].x - (wld[11].x + wld[12].x) / 2, wld[wj].z - (wld[11].z + wld[12].z) / 2) / 0.7) : NaN);
+      const h = hands && hands[hk];
+      if (h) { this.hasHands = true; st.fist[hk] += (1 - Math.exp(-dt / AN.fistS)) * (h[0] - st.fist[hk]); }
+      sig['fist' + sd][i] = st.fist[hk]; sig['seen' + sd][i] = h ? 1 : 0;
+    });
     const sx = f.pos(J.L_HIP) && f.pos(J.R_HIP) ? (f.pos(J.L_HIP)[0] + f.pos(J.R_HIP)[0]) / 2 / W : NaN;
     put('stageX', sx);
     // how close she is, from this frame alone (the torso, or the shoulders when the torso is foreshortened)
@@ -164,9 +185,9 @@ const LIMB_J = { lh: J.L_WR, rh: J.R_WR, lf: J.L_AN, rf: J.R_AN };
 // a whole tracked clip at once
 export function analyze(pose) {
   const A = new Analyzer(pose.width, pose.height, pose.name, Math.max(1, pose.t.length));
-  for (let i = 0; i < pose.t.length; i++) A.push(pose.image[i], pose.world[i], pose.t[i]);
+  for (let i = 0; i < pose.t.length; i++) A.push(pose.image[i], pose.world[i], pose.t[i], pose.hands ? pose.hands[i] : null);
   A.events.sort((a, b) => a.t - b.t);
-  return { n: A.n, t: pose.t, sig: A.sig, events: A.events, dur: pose.duration, name: pose.name };
+  return { n: A.n, t: pose.t, sig: A.sig, events: A.events, dur: pose.duration, name: pose.name, hasHands: A.hasHands };
 }
 
 // percentiles of each signal while a body is seen (for the lab and the page's legends)

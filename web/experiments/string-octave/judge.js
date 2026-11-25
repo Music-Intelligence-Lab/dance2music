@@ -29,7 +29,68 @@ const pct = (arr, q) => { const v = Array.from(arr).sort((a, b) => a - b); retur
 
 export const WEIGHTS = { voices: 0.2, melody: 0.25, harmony: 0.15, fit: 0.2, expression: 0.2 };
 
+// Song mode (no harmony): the same idea with other questions.
+//   line          each line moves mostly by step with some leaps, over a real range, at a singable pace;
+//                 its long notes are at rest (the tonic triad, or a consonance with the other line)
+//   together      (two lines) consonant when both hold; not glued to each other all the time
+//   phrasing      the lines breathe: they sound most but not all of the time, in phrases of a few seconds
+//   expression    the loudness follows the hand that bows it, within a moderate range; long notes get vibrato
+//   fit           the pitch is where the hand is
+export const SONG_WEIGHTS = { line: 0.25, together: 0.15, phrasing: 0.2, expression: 0.25, fit: 0.15 };
+const CONS = new Set([0, 3, 4, 7, 8, 9]);
+function judgeSong(a, s) {
+  const n = a.n, S = a.sig, C = s.curves, P = s.params, why = {}, two = s.song.voices >= 2, T = a.t;
+  const stable = new Set([0, [0, 4].every(x => (s.song.ladders[0] || []).some(m => mod(m - s.key) === x)) ? 4 : 3, 7].map(x => mod(s.key + x)));
+  const per = { line: [], phrasing: [], expression: [], fit: [] };
+  for (let k = 1; k <= s.song.voices; k++) {
+    const ns = s.notes.filter(x => x.part === 's' + k), amp = C['amp' + k], gate = C['gate' + k], pitch = C['pitch' + k], vib = C['vib' + k];
+    const side = two ? ((P.sngUpper === 'left') === (k === 1) ? 'L' : 'R') : null;
+    const sp = new Float32Array(n), up = new Float32Array(n);
+    for (let i = 0; i < n; i++) { sp[i] = side ? S[side === 'L' ? 'spLH' : 'spRH'][i] : Math.max(S.spLH[i], S.spRH[i]); up[i] = side ? S['up' + side][i] : Math.max(S.upL[i], S.upR[i]); }
+    // line
+    const iv = []; for (let i = 1; i < ns.length; i++) if (ns[i].slur) iv.push(Math.abs(ns[i].midi - ns[i - 1].midi));
+    const steps = iv.length ? iv.filter(x => x >= 1 && x <= 2).length / iv.length : 0, leaps = iv.length ? iv.filter(x => x > 7).length / iv.length : 0;
+    const range = ns.length ? Math.max(...ns.map(x => x.midi)) - Math.min(...ns.map(x => x.midi)) : 0, perMin = ns.length / s.dur * 60;
+    const long = ns.filter(x => x.t1 - x.t0 >= 1), other = two ? C['pitch' + (3 - k)] : null, og = two ? C['gate' + (3 - k)] : null;
+    let rest = 0; for (const x of long) { let i = 0; while (i < n - 1 && T[i] < x.t1 - 0.1) i++;
+      rest += (og && og[i] ? CONS.has(mod(Math.abs(x.midi - Math.round(other[i])))) : stable.has(mod(x.midi))) ? 1 : 0; }
+    const longRest = long.length ? rest / long.length : 1;
+    per.line.push(ns.length < 4 ? 0 : mean([band(steps, 0.4, 0.8, 0.3), clip(1 - 3 * Math.max(0, leaps - 0.15)), clip(range / 9), band(perMin, 20, 70, 40), clip((longRest - 0.4) / 0.5)]));
+    // phrasing
+    const runs = []; let t0 = null, on = 0, seen = 0;
+    for (let i = 0; i < n; i++) { if (S.seen[i]) seen++; if (gate[i]) { on++; if (t0 === null) t0 = T[i]; } else if (t0 !== null) { runs.push(T[i] - t0); t0 = null; } }
+    if (t0 !== null) runs.push(s.dur - t0);
+    const sounding = on / Math.max(1, seen), phraseMed = runs.length ? pct(runs, 0.5) : 0, phrasesPerMin = runs.length / s.dur * 60;
+    per.phrasing.push(mean([band(sounding, 0.35, 0.8, 0.3), band(phraseMed, 2.5, 12, 6), band(phrasesPerMin, 3, 14, 6)]));
+    // expression
+    const g = [], h = [], av = []; let trav = 0, oldT = 0, vibT = 0, ni = 0;
+    for (let i = 0; i < n; i++) { if (!gate[i]) continue; g.push(amp[i]); h.push(sp[i]); av.push(amp[i]); if (i && gate[i - 1]) trav += Math.abs(amp[i] - amp[i - 1]);
+      while (ni < ns.length - 1 && ns[ni + 1].t0 <= T[i]) ni++;
+      if (ns[ni] && T[i] - ns[ni].t0 > 1.2) { oldT++; if (vib[i] > 0.25) vibT++; } }
+    const follows = g.length > 10 ? corr(g, h, g.length) : 0, dynRange = av.length ? pct(av, 0.95) - pct(av, 0.05) : 0, vibShare = oldT ? vibT / oldT : 1, travel = trav / Math.max(1, on / 30);
+    per.expression.push(mean([clip(follows / 0.45), band(dynRange, 0.25, 0.5, 0.3), clip(vibShare / 0.6), clip(1 - (travel - 0.5) / 0.6)]));
+    // fit
+    const pg = [], ug = []; for (let i = 0; i < n; i++) if (gate[i]) { pg.push(pitch[i]); ug.push(up[i]); }
+    const pitchFollows = pg.length > 10 ? corr(pg, ug, pg.length) : 0;
+    per.fit.push(clip(pitchFollows / 0.75));
+    Object.assign(why, Object.fromEntries(Object.entries({ steps, leaps, range, notesPerMin: perMin, longAtRest: longRest, sounding, phraseMed, phrasesPerMin, ampFollowsHand: follows, dynRange, vibratoOnLong: vibShare, pitchFollowsHand: pitchFollows })
+      .map(([q, v]) => [q + k, v])));
+  }
+  const scores = Object.fromEntries(Object.entries(per).map(([q, v]) => [q, mean(v)]));
+  if (two) {
+    let both = 0, cons = 0, same = 0, either = 0;
+    for (let i = 0; i < n; i++) { const g1 = C.gate1[i], g2 = C.gate2[i]; if (g1 || g2) either++; if (!(g1 && g2)) continue; both++;
+      if (CONS.has(mod(Math.round(C.pitch1[i]) - Math.round(C.pitch2[i])))) cons++;
+      if (i && Math.abs((C.pitch1[i] - C.pitch1[i - 1]) - (C.pitch2[i] - C.pitch2[i - 1])) < 0.02) same++; }
+    why.both = both / Math.max(1, either); why.consonant = cons / Math.max(1, both); why.parallel = same / Math.max(1, both);
+    scores.together = both < 30 ? 0.5 : mean([clip((why.consonant - 0.45) / 0.35), band(why.both, 0.3, 0.8, 0.3)]);
+  }
+  const W = Object.entries(SONG_WEIGHTS).filter(([q]) => q in scores), tot = W.reduce((z, [, w]) => z + w, 0);
+  return { total: W.reduce((z, [q, w]) => z + w * scores[q], 0) / tot, scores, why };
+}
+
 export function judge(a, s) {
+  if (s.mode === 'song') return judgeSong(a, s);
   const n = a.n, S = a.sig, C = s.curves, oct = s.mode === 'octave', why = {};
   const V = s.chords.map(c => c.voicing).filter(Boolean), parts = ['cb', 'vc', 'va', 'vn2', 'vn1'];
 

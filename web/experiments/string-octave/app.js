@@ -8,6 +8,7 @@ import { arrange, Arranger, stats, DEFAULTS, PARAM_META, SOURCES, PARTS, DEGS, c
 import { Samples, Player, render, wavBlob } from './sampler.js';
 import { smf, MidiOut, MIDI_OPTS } from './midi.js';
 import { RULE } from './octave.js';
+import { SCALES } from './song.js';
 import { judge } from './judge.js';
 import { VERSIONS as ALL_VERSIONS, paramsOf } from './versions.js';
 const VERSIONS = CONFIG.versions ? ALL_VERSIONS.filter(v => CONFIG.versions.includes(v.id)) : ALL_VERSIONS;
@@ -100,14 +101,16 @@ document.addEventListener('keydown', e => {
 // ── live: a camera, or a video as it plays. The pose is tracked in the page and the score is written
 // one frame at a time (Analyzer.push → Arranger.step); what sounds is what the body did a frame ago ──
 const CAMERA = '__camera', FILE = '__file', livePose = new LivePose();
+const wantHands = () => A.params.mode === 'song' && A.params.sngGate === 'fist';      // only then are the hands read (it costs frame rate)
 async function startLive(kind, file) {
   stopLive(false); A.playing = false; if (A.player) A.player.stop(); A.midi.stop(); video.pause();
   const mine = ++starting;
   try {
     status('loading the pose model…'); await livePose.load(query.get('model') || CONFIG.model);
+    livePose.wantHands = wantHands(); if (livePose.wantHands) { status('loading the hand model…'); await livePose.loadHands(); }
     A.clip = kind === 'camera' ? 'camera' : file.name.replace(/\.[^.]+$/, ''); A.fromFile = true;
     A.analysis = null; A.score = null;
-    A.live = { kind, an: null, arr: null, pose: { name: A.clip, t: [], image: [], world: [], width: 0, height: 0, duration: 0 }, t0: null, last: -1, fps: 0 };
+    A.live = { kind, an: null, arr: null, pose: { name: A.clip, t: [], image: [], world: [], hands: [], width: 0, height: 0, duration: 0 }, t0: null, last: -1, fps: 0 };
     await ensureAudio(); if (mine !== starting) return;
     if (kind === 'camera') { A.live.stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } }); video.srcObject = A.live.stream; video.removeAttribute('src'); }
     else { video.srcObject = null; if (A.fileURL) URL.revokeObjectURL(A.fileURL); A.fileURL = URL.createObjectURL(file); video.src = A.fileURL; video.currentTime = 0; }
@@ -123,8 +126,8 @@ async function startLive(kind, file) {
       if (t > L.last + 0.005) {
         const r = livePose.detect(video);
         if (!L.an) { L.pose.width = video.videoWidth; L.pose.height = video.videoHeight; L.an = new Analyzer(video.videoWidth, video.videoHeight, A.clip); newLiveArranger(); A.analysis = L.an; A.pose = L.pose; }
-        L.pose.t.push(Math.round(t * 1000) / 1000); L.pose.image.push(r.image); L.pose.world.push(r.world); L.pose.duration = t;
-        const i = L.an.push(r.image, r.world, t); L.arr.step(i);
+        L.pose.t.push(Math.round(t * 1000) / 1000); L.pose.image.push(r.image); L.pose.world.push(r.world); L.pose.hands.push(r.hands); L.pose.duration = t;
+        const i = L.an.push(r.image, r.world, t, r.hands); L.arr.step(i);
         A.player.liveFrame(i, t); A.midi.liveFrame(i, t);
         if (L.last >= 0) L.fps += 0.05 * (1 / Math.max(1e-3, t - L.last) - L.fps); L.last = t;
       }
@@ -138,7 +141,10 @@ function newLiveArranger() {
   for (let i = 0; i < L.an.n; i++) L.arr.step(i);              // a changed control: the past is re-read in silence, the music carries on from now
   A.score = L.arr.score; A.player.liveStart(A.score); A.midi.liveStart(A.score);
 }
-function rearrangeLive() { if (A.live.an) { newLiveArranger(); seqN = -1; } }
+function rearrangeLive() {
+  livePose.wantHands = wantHands(); if (livePose.wantHands && !livePose.hands) livePose.loadHands().catch(() => {});
+  if (A.live.an) { ensureAudio().then(() => { if (A.live && A.live.an) { newLiveArranger(); seqN = -1; } }); }
+}
 // stop: the pass becomes a clip like any other (a video can then be replayed, seeked, re-arranged and saved)
 function stopLive(keep) {
   const L = A.live; if (!L) return; A.live = null; starting++;
@@ -169,12 +175,25 @@ function draw() {
   const color = c ? DEG_COLOR[c.deg] : '#efe9df';
   drawBody($('overlay'), video, A.pose, frameAt(now), color);
   $('clock').textContent = `${fmt(now)} / ${fmt(A.score.dur)}`;
+  if (A.score.mode === 'song') return drawSong(frameAt(now));
   const pl = A.score.places[frameAt(now)], oct = A.score.mode === 'octave', place = pl >= 0 ? (oct ? String(pl) : DEGS[pl]) : null;
   if (place !== lastPlace) { lastPlace = place; for (const d of $('map').children) d.classList.toggle('body', (oct ? d.dataset.pos : d.dataset.deg) === place); }
   if (c !== lastChord) {
     lastChord = c; $('chord').textContent = c ? c.symbol : '–'; $('degree').textContent = c ? c.deg : ''; $('chord').style.color = color;
     for (const d of $('map').children) { const on = c && (c.pos != null ? +d.dataset.pos === c.pos : d.dataset.deg === c.deg); d.classList.toggle('here', !!on); d.style.background = on ? DEG_COLOR[d.dataset.deg] : ''; }
   }
+}
+const NOTE = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'], noteName = m => NOTE[((Math.round(m) % 12) + 12) % 12] + (Math.floor(Math.round(m) / 12) - 1);
+// Song mode: the notes the lines are on, the hands (open or closed), and the place of each line on its scale
+function drawSong(i) {
+  const C = A.score.curves, S = A.analysis.sig, P = A.params, on = k => k <= A.score.song.voices && C['amp' + k][i] > 0.004;
+  const txt = []; for (let k = 1; k <= A.score.song.voices; k++) txt.push(on(k) ? noteName(C['pitch' + k][i]) : '·');
+  $('chord').textContent = txt.join('   '); $('chord').style.color = PART_COLOR.s1;
+  const hand = sd => (S['fist' + sd][i] > P.fistOn ? '✊' : '✋');
+  $('degree').textContent = P.sngGate === 'fist' && (A.analysis.hasHands || A.live) ? `her left ${hand('L')}  right ${hand('R')}` : '';
+  const near = k => { const L = A.score.song.ladders[k - 1]; let b = 0; L.forEach((m, j) => { if (Math.abs(m - C['pitch' + k][i]) < Math.abs(L[b] - C['pitch' + k][i])) b = j; }); return b; };
+  const j1 = on(1) ? near(1) : -1, j2 = on(2) ? near(2) : -1;
+  for (const d of $('map').children) { const j = +d.dataset.j; d.classList.toggle('here', j === j1); d.style.background = j === j1 ? PART_COLOR.s1 : ''; d.classList.toggle('body', j === j2); }
 }
 function loop() {
   if (A.live) { if (A.score && A.score.chords.length !== seqN) { seqN = A.score.chords.length; drawSeq(); } }
@@ -200,10 +219,17 @@ function loop() {
   cv.addEventListener('pointerup', () => { drag = false; }); }
 
 function drawStats() {
-  const j = A.judge, lab = { voices: 'voices move well', melody: 'melody', harmony: 'harmony', fit: 'fits her movement', expression: 'expression' };
+  const j = A.judge, lab = { voices: 'voices move well', melody: 'melody', harmony: 'harmony', fit: 'fits her movement', expression: 'expression',
+                             line: 'the lines', together: 'together', phrasing: 'phrasing' };
   $('judge').innerHTML = `<div class="total"><b>${Math.round(100 * j.total)}</b><span>judge, of 100</span><i style="width:${100 * j.total}%"></i></div>`
     + Object.entries(j.scores).map(([k, v]) => `<div title="${Object.entries(j.why).map(([a, b]) => a + ' ' + (b == null ? '–' : b.toFixed(2))).join(' · ')}"><b>${Math.round(100 * v)}</b><span>${lab[k]}</span><i style="width:${100 * v}%"></i></div>`).join('');
   const s = A.stats, f = (x, d = 1) => (Number.isFinite(x) ? x.toFixed(d) : '–');
+  if (s.song) {
+    $('stats').innerHTML = s.lines.map((l, q) => [[l.n, `${q ? 'lower' : 'upper'} line: notes · ${f(l.perMin, 0)} a minute`], [l.bows, 'bows'], [f(100 * l.sounding, 0) + '%', `of the time sounding, in ${l.phrases} phrases`], [`${noteName(l.lo)}–${noteName(l.hi)}`, 'range']])
+      .flat().map(([b, t]) => `<div><b>${b}</b><span>${t}</span></div>`).join('')
+      + (A.analysis.hasHands ? '' : '<div><b>✋</b><span>no hand was read: every hand counts as open (hands are read while a video or the camera is tracked in a Song version)</span></div>');
+    return;
+  }
   const oct = A.score.mode === 'octave', home = ((oct ? s.share['1'] : s.share.I) || 0) * 100;
   const dark = (oct ? (s.share['5'] || 0) : (s.share['♭VI'] || 0) + (s.share.i || 0) + (s.share.iv || 0)) * 100;
   const cells = [[s.chords, `chords · ${f(s.perMin)} a minute`], [f(s.durMed) + ' s', 'typical chord length'], [f(home, 0) + '%', oct ? `on the tonic · ${f(dark, 0)}% on the dominant` : `at home · ${f(dark, 0)}% in the dark chords`],
@@ -216,6 +242,14 @@ function drawSeq() {
   for (const el of $('seq').children) el.onclick = () => seek(+el.dataset.t);
 }
 function buildMap() {
+  if (A.params.mode === 'song') {                // the scale as a ladder: each line's notes, the upper line's on the left
+    const P = A.params, sc = SCALES[P.sngScale] || SCALES.dorian, all = []; for (let m = 12; m <= 108; m++) if (sc.includes((((m - P.key) % 12) + 12) % 12)) all.push(m);
+    const a = all.findIndex(m => m >= P.sngLo1), b = all.findLastIndex(m => m <= P.sngHi1), lo2 = Math.max(0, a - P.sngApart), two = P.sngVoices >= 2; let h = '';
+    for (let j = b - a; j >= 0; j--) h += `<div class="wide" data-j="${j}"><b>${noteName(all[a + j])}</b>${two ? `<span>${noteName(all[lo2 + j])}</span>` : ''}<span>${j === b - a ? 'hand above the head' : j === 0 ? 'hand at the hip' : ''}</span></div>`;
+    $('map').innerHTML = h;
+    $('mapcap').textContent = `No harmony: ${two ? 'two sung lines, a hand each (her right: the upper)' : 'one sung line, led by the higher open hand'}. A hand's height is its place on this scale; a fast hand leaps and slides into the note; a fist lifts the bow. Filled: the upper line now${two ? '. Outline: the lower line (its own notes are the second column)' : ''}.`;
+    lastChord = null; lastPlace = null; return;
+  }
   if (A.params.mode === 'octave') {             // the octave as a ladder: the bass note and its chord going up and coming down
     const r = RULE[A.params.octMode === 'minor' ? 'minor' : 'major'], N = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'], k = A.params.key;
     const where = ['standing tall', '', '', 'deep lunge', '', '', '', 'floor, inverted'];
@@ -244,13 +278,16 @@ function setVersion(id) {
 }
 function setParam(k, v) {
   A.params[k] = v; save('params', A.params); setVersion('');
-  if (['key', 'mode', 'octMode'].includes(k)) buildMap();
+  if (['key', 'mode', 'octMode', 'sngScale', 'sngLo1', 'sngHi1', 'sngApart', 'sngVoices', 'sngUpper'].includes(k)) buildMap();
+  if (k === 'mode') buildParams();
   clearTimeout(debounce); debounce = setTimeout(rearrange, 60);
 }
 function buildParams() {
-  const groups = {}; for (const m of PARAM_META) (groups[m[5]] = groups[m[5]] || []).push(m);
-  const hints = { Harmony: 'shape → chord', Voicing: 'space → spread', Dynamics: 'effort → loudness', Tremolo: 'sudden → bow', 'Arm line': 'arms → violins', 'Leg line': 'legs → cellos', 'Steps and accents': 'pizzicato', Harp: 'circles, turns' };
-  const open = load('open', { Harmony: true, 'Arm line': true });
+  // Song mode has its own controls; the harmony's are hidden then (and the other way round)
+  const song = A.params.mode === 'song', SONG_G = ['Song', 'Bow', 'Expression'], SHARED = ['mode', 'key', 'dynSrc', 'dynLo', 'dynHi', 'nienteS', 'nearMax'];
+  const groups = {}; for (const m of PARAM_META) if (song ? SONG_G.includes(m[5]) || SHARED.includes(m[0]) : !SONG_G.includes(m[5])) (groups[m[5]] = groups[m[5]] || []).push(m);
+  const hints = { Harmony: 'shape → chord', Voicing: 'space → spread', Dynamics: 'effort → loudness', Tremolo: 'sudden → bow', 'Arm line': 'arms → violins', 'Leg line': 'legs → cellos', 'Steps and accents': 'pizzicato', Harp: 'circles, turns', Song: 'hands → sung lines', Bow: 'open hand, fist, rest', Expression: 'loudness, vibrato' };
+  const open = load('open', { Harmony: true, 'Arm line': true, Song: true, Bow: true, Expression: true });
   $('pane-map').innerHTML = Object.entries(groups).map(([g, ms]) => `<details data-g="${g}"${open[g] ? ' open' : ''}><summary>${g}<small>${hints[g] || ''}</small></summary>${ms.map(row).join('')}</details>`).join('');
   for (const d of $('pane-map').querySelectorAll('details')) d.ontoggle = () => { open[d.dataset.g] = d.open; save('open', open); };
   for (const el of $('pane-map').querySelectorAll('[data-k]')) {
@@ -284,6 +321,7 @@ function buildMix() {
   $('mxMaster').oninput = e => { A.mix.master = +e.target.value; e.target.nextElementSibling.textContent = e.target.value; apply(); };
 }
 $('mutePage').onchange = () => { if (A.player) A.player.setMix(pageMix()); };
+$('songMidi').onchange = e => { MIDI_OPTS.song = e.target.value; if (A.score) A.midi.load(A.score, A.analysis.t); if (A.playing) A.midi.start(currentTime()); };
 $('cc1').onchange = e => { MIDI_OPTS.cc1 = e.target.value; if (A.score) A.midi.load(A.score, A.analysis.t); if (A.playing) A.midi.start(currentTime()); };
 
 // ── tabs, slots, zoom ──

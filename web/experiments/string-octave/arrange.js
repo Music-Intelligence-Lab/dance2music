@@ -42,19 +42,60 @@
 //          bright, solo (line dynamic), span, lift
 import { SIGNALS } from './analyze.js';
 import { Octave, OCT_PLACES } from './octave.js';
+import { Song, SCALES } from './song.js';
 
-export const PARTS = ['cb', 'vc', 'va', 'vn2', 'vn1', 'solo', 'vcl', 'pzh', 'pzb', 'harp'];
+export const PARTS = ['cb', 'vc', 'va', 'vn2', 'vn1', 'solo', 'vcl', 'pzh', 'pzb', 'harp', 's1', 's2'];
 export const PART_INFO = {
   cb: { label: 'Basses', set: 'cb', lo: 28, hi: 48 }, vc: { label: 'Cellos', set: 'vc', lo: 36, hi: 60 },
   va: { label: 'Violas', set: 'va', lo: 48, hi: 69 }, vn2: { label: 'Violins II', set: 'vn2', lo: 55, hi: 79 },
   vn1: { label: 'Violins I', set: 'vn1', lo: 57, hi: 93 },
   solo: { label: 'Arm line (Violins I)', set: 'vn1' }, vcl: { label: 'Leg line (Cellos)', set: 'vc' },
   pzh: { label: 'Accents (pizz.)', set: 'va' }, pzb: { label: 'Steps (bass pizz.)', set: 'cb' }, harp: { label: 'Harp', set: 'harp' },
+  s1: { label: 'Upper line (violin)', set: 'vn1' }, s2: { label: 'Lower line (cello)', set: 'vc' },
 };
 
 // [key, default, min, max, step, group, label]
 export const PARAM_META = [
-  ['mode', 'octave', ['octave', 'map'], 0, 0, 'Texture', 'four voices on a walking bass (octave) · blocks of chords (map)'],
+  ['mode', 'octave', ['octave', 'map', 'song'], 0, 0, 'Texture', 'four voices on a walking bass (octave) · blocks of chords (map) · sung lines, no harmony (song)'],
+  ['sngVoices', 2, 1, 2, 1, 'Song', 'lines: one (the higher open hand leads) · two (a hand each)'],
+  ['sngUpper', 'right', ['right', 'left'], 0, 0, 'Song', 'the upper line is her … hand'],
+  ['sngScale', 'dorian', Object.keys(SCALES), 0, 0, 'Song', 'scale (on the key)'],
+  ['sngLo1', 62, 48, 79, 1, 'Song', 'upper line: lowest note (MIDI)'], ['sngHi1', 77, 60, 96, 1, 'Song', 'upper line: highest note'],
+  ['sngApart', 9, 2, 16, 1, 'Song', 'lower line: this many scale steps under the upper (9 = a tenth)'],
+  ['sngULo', -0.05, -0.3, 0.6, 0.01, 'Song', 'hand height of the lowest note (0 = hips)'],
+  ['sngUHi', 1.0, 0.5, 1.3, 0.01, 'Song', 'hand height of the highest note (1 = above the head)'],
+  ['sngHyst', 0.22, 0, 0.5, 0.01, 'Song', 'the hand must pass a note boundary by (notes)'],
+  ['sngRunV', 5, 2, 30, 0.5, 'Song', 'a hand faster than this leaps instead of stepping (notes a second)'],
+  ['sngGliss', 0.2, 0, 1, 0.01, 'Song', '… and while it flies the pitch leans after it by (0 holds · 1 slides with the hand)'],
+  ['sngGlideS', 0.09, 0.01, 0.6, 0.01, 'Song', 'glide into every note (s)'],
+  ['sngPortS', 0.2, 0, 1, 0.01, 'Song', '… longer by this for a leap of an octave (portamento, s)'],
+  ['sngNoteS', 0.1, 0.03, 0.4, 0.01, 'Song', 'a pitch is a note once held (s)'],
+  ['sngScoop', 0.15, 0, 1, 0.01, 'Song', 'a new bow starts this far under the note (semitones)'],
+  ['sngConsonant', 1, 0, 1, 1, 'Song', 'two lines: a leap lands on a consonance with the other line'],
+  ['sngResolve', 1, 0, 1, 1, 'Song', 'a held unrestful note resolves by step'],
+  ['sngSettleS', 0.7, 0.2, 3, 0.05, 'Song', '… after (s)'],
+  ['sngCalmV', 0.6, 0.1, 3, 0.05, 'Song', '… once the hand climbs or falls slower than (notes a second)'],
+  ['sngGate', 'fist', ['fist', 'always'], 0, 0, 'Bow', 'a fist lifts the bow · the bow stays on'],
+  ['fistOn', 0.55, 0.2, 0.95, 0.01, 'Bow', 'a fist: the reading above'], ['fistOff', 0.3, 0.05, 0.9, 0.01, 'Bow', 'open again: below'],
+  ['fistHoldS', 0.12, 0, 0.6, 0.01, 'Bow', 'a fist must hold (s)'],
+  ['sngMove', 0.07, 0.02, 0.3, 0.01, 'Bow', 'the hand is moving above (speed)'],
+  ['sngRestUp', -0.12, -0.4, 0.5, 0.01, 'Bow', 'a hand hanging below this rests the line (0 = hips; −0.4: never)'],
+  ['sngRestS', 2.5, 0, 12, 0.1, 'Bow', 'a hand this long without moving rests the line (0: never)'],
+  ['sngRebow', 1, 0, 1, 1, 'Bow', 'a new stroke on the same note is a new bow'],
+  ['sngBowRestS', 0.35, 0.1, 2, 0.05, 'Bow', '… after a pause of (s)'],
+  ['sngAttFastS', 0.035, 0.01, 0.2, 0.005, 'Bow', 'attack of a sudden bow (s)'], ['sngAttSlowS', 0.22, 0.03, 1, 0.01, 'Bow', 'attack of a gentle bow (s)'],
+  ['sngRelS', 0.16, 0.03, 1.5, 0.01, 'Bow', 'release when the hand closes (s)'], ['sngRestRelS', 0.8, 0.1, 4, 0.05, 'Bow', 'release when the hand comes to rest (s)'],
+  ['sngFloor', 0.4, 0, 1, 0.01, 'Expression', 'softest bow'],
+  ['sngBow', 0.55, 0, 1.5, 0.01, 'Expression', 'the hand\'s speed swells by'],
+  ['sngSpTop', 0.32, 0.1, 1, 0.01, 'Expression', '… full at this speed'],
+  ['sngPhrase', 0.3, 0, 1.5, 0.01, 'Expression', 'the whole body\'s energy lifts the phrase by'],
+  ['sngContour', 0.2, 0, 1, 0.01, 'Expression', 'a rising line swells by'],
+  ['sngAccent', 0.4, 0, 1.5, 0.01, 'Expression', 'a sudden movement accents by'],
+  ['sngUpS', 0.14, 0.03, 2, 0.01, 'Expression', 'swell time (s)'], ['sngDownS', 1.4, 0.1, 8, 0.05, 'Expression', 'fall time (s)'],
+  ['sngBowFallS', 0.7, 0.1, 4, 0.05, 'Expression', 'the bow slows over (s)'],
+  ['vibDepth', 0.7, 0, 1, 0.01, 'Expression', 'vibrato depth'],
+  ['vibDelayS', 0.25, 0, 1.5, 0.01, 'Expression', 'vibrato starts after (s)'], ['vibGrowS', 0.9, 0.1, 3, 0.05, 'Expression', '… and grows over (s)'],
+  ['vibHz', 5.7, 4, 7.5, 0.1, 'Expression', 'vibrato rate (Hz)'], ['vibHzDyn', 1.2, 0, 3, 0.1, 'Expression', '… faster when loud by (Hz)'],
   ['octMode', 'major', ['major', 'minor'], 0, 0, 'Texture', 'mode of the octave'],
   ['octTop', 0.95, 0.7, 1.2, 0.01, 'Texture', 'hips this high = upper tonic'],
   ['octBottom', 0.5, 0.2, 0.8, 0.01, 'Texture', 'hips this low = lower tonic'],
@@ -213,6 +254,7 @@ export function voice(ch, prev, span, lift, P, bassOn) {
   return out;
 }
 
+export const SONG_CURVES = [1, 2].flatMap(k => ['pitch', 'amp', 'vib', 'vibHz', 'bri', 'gate'].map(c => c + k));
 const ladderOf = (scale, lo, hi) => { const out = []; for (let m = lo; m <= hi; m++) if (scale.includes(mod(m))) out.push(m); return out; };
 function nearestIdx(L, idx, ok) {
   for (let d = 0; d < L.length; d++) { if (idx - d >= 0 && ok(L[idx - d])) return idx - d; if (idx + d < L.length && ok(L[idx + d])) return idx + d; }
@@ -267,7 +309,8 @@ class Line {
 export function Arranger(a, params = {}) {
   const P = { ...DEFAULTS, ...params };
   const S = a.sig, T = a.t; let cap = Math.max(1, a.cap || a.n);
-  const curves = {}; for (const k of ['dyn', 'dynTop', 'dynMid', 'dynBass', 'trem', 'bright', 'solo', 'span', 'lift', 'on']) curves[k] = new Float32Array(cap);
+  const curves = {}; const songMode = P.mode === 'song';
+  for (const k of ['dyn', 'dynTop', 'dynMid', 'dynBass', 'trem', 'bright', 'solo', 'span', 'lift', 'on', ...(songMode ? SONG_CURVES : [])]) curves[k] = new Float32Array(cap);
   const notes = [], chords = [], marks = []; let places = new Int8Array(cap).fill(-1);
   const src = (name, i, lo, hi) => clip(((S[name] ? S[name][i] : 0) - lo) / Math.max(1e-6, hi - lo));
 
@@ -282,6 +325,7 @@ export function Arranger(a, params = {}) {
   const cello = new Line('vcl', { lo: P.legLo, hi: P.legHi, gapS: P.legGapS, holdS: P.legHoldS, step: 2, leap: 3, slowPeak: 3.5, degPerTorso: 7, pull: 4 });
   let ei = 0; const E = a.events;
   const octave = P.mode === 'octave', oct = octave ? new Octave(P, notes, chords) : null;
+  const song = songMode ? new Song(P, notes) : null; let phrase = 0, wasOn = false;
   const fsm = { dynTop: 0, dynMid: 0, dynBass: 0 }, dynV = { dynTop: 0, dynMid: 0, dynBass: 0 };
 
   const setChord = (deg, t, cause, colour) => {
@@ -300,7 +344,7 @@ export function Arranger(a, params = {}) {
     voicing = v; cur = ch; curDeg = deg; curColour = colour; lastVoice = t;
   };
 
-  const score = { chords, notes, curves, marks, places, placeNames: octave ? OCT_PLACES : DEGS, mode: P.mode, params: P, dur: 0, key: P.key };
+  const score = { chords, notes, curves, marks, places, placeNames: octave ? OCT_PLACES : DEGS, mode: P.mode, params: P, dur: 0, key: P.key, song: song ? song.info : null };
   this.score = score;
   this.step = i => {
     if (i >= cap) { while (i >= cap) cap *= 2; for (const k in curves) { const nb = new Float32Array(cap); nb.set(curves[k]); curves[k] = nb; }
@@ -332,7 +376,10 @@ export function Arranger(a, params = {}) {
     const landing = arrived || evs.some(e => (e.type === 'stroke' && e.peak >= 1.2 && e.path >= 0.3) || e.type === 'sudden' || e.type === 'landed' || e.type === 'still');
 
     // ── harmony ──
-    if (octave) {
+    if (songMode) {                                              // no harmony: the lines are written below, once the body's state is known
+      if (present && tracked && !wasOn) { marks.push({ t, label: 'enter' }); wasOn = true; }
+      else if (!present && wasOn) { marks.push({ t, label: 'exit' }); wasOn = false; }
+    } else if (octave) {
       if (present && tracked) {
         if (!cur) marks.push({ t, label: 'enter' });
         cur = oct.bassFrame(t, sm, landing); places[i] = oct.target;
@@ -396,6 +443,10 @@ export function Arranger(a, params = {}) {
     soloDyn += k(ws > soloDyn ? 0.12 : 0.8) * (ws - soloDyn);
     curves.dyn[i] = dyn * on; curves.trem[i] = trem; curves.bright[i] = bright; curves.solo[i] = soloDyn;
     curves.span[i] = span; curves.lift[i] = lift; curves.on[i] = on;
+    if (song) {
+      const ph = src(P.dynSrc, i, P.dynLo, P.dynHi); phrase += k(ph > phrase ? 0.8 : 3) * (ph - phrase);
+      song.frame(i, t, dt, S, { present: present && lastSeen > -1e8, on, phrase, level: S.level[i], evs, niente: stillSince !== null && t - stillSince >= P.nienteS }, curves);
+    }
 
     // ── lines, steps, accents, harp ──
     if (cur && present && tracked) {
@@ -445,6 +496,16 @@ export function arrange(a, params = {}) {
 
 // numbers to judge a score by (the lab prints them; the page shows a few)
 export function stats(a, s) {
+  if (s.mode === 'song') {
+    const lines = [];
+    for (let k = 1; k <= s.song.voices; k++) {
+      const ns = s.notes.filter(x => x.part === 's' + k), gate = s.curves['gate' + k], amp = s.curves['amp' + k]; let on = 0, runs = 0, sum = 0;
+      for (let i = 0; i < a.n; i++) if (gate[i]) { on++; sum += amp[i]; if (!i || !gate[i - 1]) runs++; }
+      lines.push({ n: ns.length, perMin: ns.length / s.dur * 60, bows: ns.filter(x => !x.slur).length, lo: Math.min(...ns.map(x => x.midi)), hi: Math.max(...ns.map(x => x.midi)),
+                   sounding: on / Math.max(1, a.n), phrases: runs, ampMean: on ? sum / on : 0 });
+    }
+    return { song: true, lines };
+  }
   const d = s.chords.map((c, i) => (i + 1 < s.chords.length ? s.chords[i + 1].t : s.dur) - c.t).sort((x, y) => x - y);
   const q = (v, p) => (v.length ? v[Math.min(v.length - 1, Math.floor(p * v.length))] : 0);
   const time = {}; s.chords.forEach((c, i) => { time[c.deg] = (time[c.deg] || 0) + ((i + 1 < s.chords.length ? s.chords[i + 1].t : s.dur) - c.t); });
