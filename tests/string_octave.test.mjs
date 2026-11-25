@@ -3,7 +3,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SIGNALS } from '../web/experiments/string-octave/analyze.js';
 import { arrange, Arranger, chordOf, voice, DEFAULTS, PART_INFO } from '../web/experiments/string-octave/arrange.js';
-import { smf, messages, CHANNEL, MidiOut } from '../web/experiments/string-octave/midi.js';
+import { smf, messages, CHANNEL, MidiOut, MIDI_OPTS } from '../web/experiments/string-octave/midi.js';
+import { bowsOf } from '../web/experiments/string-octave/song.js';
+import { carriers, SONG_MIX } from '../web/experiments/string-octave/sampler.js';
 import { Octave, RULE } from '../web/experiments/string-octave/octave.js';
 import { judge } from '../web/experiments/string-octave/judge.js';
 
@@ -136,4 +138,104 @@ test('live: frame by frame gives the same score, and live MIDI closes every note
   const count = {}; for (const b of sent) { const k = (b[0] & 0x0f) + ':' + b[1]; if ((b[0] & 0xf0) === 0x90) count[k] = (count[k] || 0) + 1; if ((b[0] & 0xf0) === 0x80) count[k] = (count[k] || 0) - 1; }
   assert.ok(Object.keys(count).length > 5 && Object.values(count).every(x => x === 0), 'every note-on has its note-off');
   assert.ok(sent.some(b => (b[0] & 0xf0) === 0xB0 && b[1] === 11), 'dynamics go out on CC 11');
+});
+
+// ── Song: sung lines, no harmony ──
+// a hand at ladder place j (0 = lowest note … 9 = highest, with the default range)
+const UP = j => j / 9 * 1.05 - 0.05, SONG = { mode: 'song', sngVoices: 1 }, DUET = { mode: 'song', sngVoices: 2 };
+const DORIAN = [0, 2, 3, 5, 7, 9, 10].map(x => mod(x + DEFAULTS.key));
+const line = (s, k = 1) => s.notes.filter(n => n.part === 's' + k);
+const fr = t => Math.round(t * 30);
+
+test('song: a slow hand steps up the scale; a fast hand holds its note and leaps to where it lands', () => {
+  // the right hand rises slowly for 8 s (about one note a second), then drops in 0.4 s
+  const up = t => (t < 1 ? UP(0) : t < 9 ? UP(0) + (UP(9) - UP(0)) * (t - 1) / 8 : t < 9.4 ? UP(9) + (UP(1) - UP(9)) * (t - 9) / 0.4 : UP(1));
+  const s = arrange(body(13, t => ({ upR: up(t), upL: -0.4, spRH: t > 0.5 && t < 12 ? 0.15 : 0, vyR: (up(t + 1 / 30) - up(t)) * 30 * 1.9 })), SONG);
+  assert.equal(s.mode, 'song'); assert.equal(s.chords.length, 0, 'no harmony');
+  const L = line(s), rise = L.filter(n => n.t0 < 9);
+  assert.ok(rise.length >= 9, `the rise sang ${rise.length} notes`);
+  for (let i = 1; i < rise.length; i++) { assert.ok(rise[i].midi - rise[i - 1].midi >= 1 && rise[i].midi - rise[i - 1].midi <= 2, 'by step'); assert.ok(rise[i].slur, 'under one bow'); }
+  for (const n of L) assert.ok(DORIAN.includes(mod(n.midi)), 'in the scale');
+  const top = rise[rise.length - 1], after = L.filter(n => n.t0 > top.t0);
+  assert.ok(after.length >= 1 && top.midi - after[0].midi >= 9, `then one leap down (${top.midi} → ${after[0] && after[0].midi}), no scale in between`);
+  const P = s.curves.pitch1; let jump = 0; for (let i = fr(1.2); i < fr(12); i++) jump = Math.max(jump, Math.abs(P[i] - P[i - 1]));
+  assert.ok(jump < 4, `the pitch glides, it never jumps (largest move in a frame: ${jump.toFixed(2)} semitones)`);
+  assert.ok(Math.abs(P[fr(9.3)] - top.midi) < 4, 'the note is held while the hand flies');
+});
+
+test('song: a fist lifts the bow, an open hand sets it again; a hanging hand rests the line', () => {
+  const s = arrange(body(16, t => ({ upR: t > 11 && t < 14 ? -0.35 : UP(4), upL: -0.4, spRH: 0.15, fistR: t > 4 && t < 6 ? 0.9 : 0.02 })), SONG);
+  const g = s.curves.gate1, amp = s.curves.amp1;
+  assert.ok(g[fr(3)] === 1 && amp[fr(3)] > 0.3, 'sounding while the hand is open');
+  assert.ok(g[fr(4.4)] === 0 && amp[fr(5.5)] < 0.02, 'the fist: silence');
+  assert.ok(g[fr(6.5)] === 1 && amp[fr(7.5)] > 0.3, 'open again: sounding');
+  const bows = line(s).filter(n => !n.slur).map(n => n.t0);
+  assert.ok(bows.some(t => t > 5.9 && t < 6.6), 'with a new bow');
+  assert.ok(g[fr(12.5)] === 0 && amp[fr(13.5)] < 0.05, 'a hand hanging at her side rests the line');
+  assert.ok(g[fr(15)] === 1, 'and lifting it starts the next phrase');
+  assert.equal(bowsOf(s, s.curves.amp1 && body(16, () => ({})).t, 1).length, bows.length, 'bowsOf: one stretch a bow');
+});
+
+test('song: vibrato grows into a held note; the bow follows the hand; a rising line is louder', () => {
+  const s = arrange(body(14, t => ({ upR: t < 7 ? UP(2) : UP(7), upL: -0.4, spRH: t > 3 && t < 4 ? 0.3 : 0.08 })), SONG), C = s.curves;
+  assert.ok(C.vib1[fr(0.3)] < 0.05 && C.vib1[fr(2.8)] > 0.25, 'none at first, then it grows');
+  assert.ok(C.vib1[fr(7.25)] < 0.5 * C.vib1[fr(6.8)], 'it stops when the line moves');
+  assert.ok(C.amp1[fr(3.9)] > C.amp1[fr(2.9)] + 0.08, 'a faster hand is a faster bow');
+  assert.ok(C.amp1[fr(6.5)] < C.amp1[fr(4.1)], 'and the swell falls back');
+  assert.ok(C.amp1[fr(12)] > C.amp1[fr(2.9)] + 0.04, 'the same bow higher up is louder');
+});
+
+test('duet: level hands sing in tenths; a held dissonance melts by step', () => {
+  const CONS = [0, 3, 4, 7, 8, 9];
+  // both hands at place 4; from 5 s the left creeps up one place (a ninth against the upper line) and stays
+  const upL = t => (t < 5 ? UP(4) : t < 6 ? UP(4) + (UP(5) - UP(4)) * (t - 5) : UP(5));
+  const s = arrange(body(12, t => ({ upR: UP(4), upL: upL(t), spRH: 0.1, spLH: 0.1, vyL: (upL(t + 1 / 30) - upL(t)) * 30 * 1.9 })), DUET), C = s.curves;
+  assert.equal(s.song.voices, 2);
+  const iv = t => Math.round(C.pitch1[fr(t)]) - Math.round(C.pitch2[fr(t)]);
+  assert.ok([15, 16].includes(iv(4)), `a tenth when the hands are level (${iv(4)} semitones)`);
+  const lower = line(s, 2);
+  assert.ok(lower.some(n => n.t0 > 5 && !CONS.includes(mod(Math.round(C.pitch1[fr(n.t0)]) - n.midi))), 'the creeping hand makes a dissonance');
+  assert.ok(CONS.includes(mod(iv(9))), `which has resolved (${iv(9)} semitones)`);
+  const diss = lower.find(n => n.t0 > 5 && !CONS.includes(mod(Math.round(C.pitch1[fr(n.t0)]) - n.midi))), res = lower.find(n => n.t0 > diss.t0);
+  assert.ok(res && Math.abs(res.midi - diss.midi) <= 2 && res.t0 - diss.t0 >= DEFAULTS.sngSettleS - 0.2, 'by step, after it has been held');
+});
+
+test('song: live gives the same score; MIDI as bows with pitch bend, or as slurred notes; the judge reads it', () => {
+  const a = body(20, t => ({ upR: UP(4.5 + 4 * Math.sin(t)), upL: UP(4.5 + 4 * Math.sin(0.7 * t + 1)), spRH: t % 6 < 4.5 ? 0.2 : 0, spLH: 0.15, vyR: 4 * Math.cos(t) * 1.05 / 9 * 1.9,
+                             vyL: 2.8 * Math.cos(0.7 * t + 1) * 1.05 / 9 * 1.9, fistL: t > 8 && t < 10 ? 0.9 : 0, move: 0.2 }));
+  const whole = arrange(a, DUET), R = new Arranger(a, DUET), sent = [], midi = new MidiOut();
+  midi.port = { send: b => sent.push(b) }; MIDI_OPTS.song = 'bend'; midi.liveStart(R.score);
+  let most = 0; const held = new Map();
+  for (let i = 0; i < a.n; i++) { R.step(i); const from = sent.length; midi.liveFrame(i, a.t[i]);
+    for (const b of sent.slice(from)) { const k = (b[0] & 15) + ':' + b[1]; if ((b[0] & 0xf0) === 0x90) held.set(k, 1); if ((b[0] & 0xf0) === 0x80) held.delete(k); }
+    for (const ch of [0, 2]) most = Math.max(most, [...held.keys()].filter(k => k.startsWith(ch + ':')).length); }
+  midi.stop(); const live = R.finish(a.dur);
+  const key = s => s.notes.map(n => `${n.part}${n.midi}@${n.t0.toFixed(3)}-${n.t1.toFixed(3)}${n.slur ? 's' : ''}`).join(' ');
+  assert.equal(key(live), key(whole));
+  assert.ok(line(whole).length > 8 && line(whole, 2).length > 8, 'two lines');
+  assert.equal(most, 1, 'one note at a time on each channel');
+  assert.ok(sent.some(b => (b[0] & 0xf0) === 0xE0) && sent.some(b => (b[0] & 0xf0) === 0xB0 && b[1] === 1), 'pitch bend and vibrato go out');
+  const m = messages(whole, a.t), ons = m.filter(x => (x.bytes[0] & 0xf0) === 0x90), offs = m.filter(x => (x.bytes[0] & 0xf0) === 0x80);
+  assert.equal(ons.length, bowsOf(whole, a.t, 1).length + bowsOf(whole, a.t, 2).length); assert.equal(ons.length, offs.length);
+  assert.deepEqual([...new Set(ons.map(x => (x.bytes[0] & 15) + 1))].sort(), [CHANNEL.s1, CHANNEL.s2]);
+  // the bend of every bow stays inside the range, and returns the pitch curve
+  const b0 = bowsOf(whole, a.t, 1)[0], pb = m.find(x => (x.bytes[0] & 0xff) === 0xE0 && x.t >= b0.t0 + 0.5);
+  const semis = ((pb.bytes[1] | (pb.bytes[2] << 7)) - 8192) / 8192 * MIDI_OPTS.bendRange;
+  assert.ok(Math.abs(b0.midi + semis - whole.curves.pitch1[fr(pb.t)]) < 0.3, 'note + bend is the pitch curve');
+  MIDI_OPTS.song = 'notes'; const m2 = messages(whole, a.t);
+  assert.equal(m2.filter(x => (x.bytes[0] & 0xf0) === 0x90).length, whole.notes.length); assert.ok(!m2.some(x => (x.bytes[0] & 0xf0) === 0xE0));
+  assert.ok(smf(whole, a.t).length > 500);
+  const j = judge(a, whole); assert.ok(j.total > 0 && j.total <= 1 && Object.values(j.scores).every(x => x >= 0 && x <= 1));
+  assert.deepEqual(Object.keys(j.scores).sort(), ['expression', 'fit', 'line', 'phrasing', 'together']);
+});
+
+test('song sound: every sounding stretch is carried by recordings near its pitch', () => {
+  const a = body(12, t => ({ upR: UP(4.5 + 4.4 * Math.sin(0.8 * t)), upL: -0.4, spRH: t > 5 && t < 7 ? 0 : 0.2, fistR: t > 5 && t < 7 ? 0.9 : 0, vyR: 0.5 })), s = arrange(a, SONG);
+  const entries = [55, 59, 63, 67, 71, 75, 79, 83].map(midi => ({ midi, file: 'x' + midi }));
+  const fake = { pick: (set, art, m) => entries.reduce((b, e) => (Math.abs(e.midi - m) < Math.abs(b.midi - m) ? e : b)) };
+  const cs = carriers(fake, 'vn1', a.t, s.curves.amp1, s.curves.pitch1, a.n);
+  assert.ok(cs.length >= 4 && cs.filter(c => c.first).length === cs.filter(c => c.last).length, 'stretches open and close');
+  for (const c of cs) for (let i = fr(c.ta); i < fr(c.tb); i++) assert.ok(Math.abs(s.curves.pitch1[i] - c.e.midi) <= SONG_MIX.far + 2.5, 'never far from the pitch');
+  let covered = 0, sounding = 0; for (let i = 0; i < a.n; i++) if (s.curves.amp1[i] > 0.004) { sounding++; if (cs.some(c => a.t[i] >= c.ta && a.t[i] <= c.tb)) covered++; }
+  assert.equal(covered, sounding, 'all of it');
 });

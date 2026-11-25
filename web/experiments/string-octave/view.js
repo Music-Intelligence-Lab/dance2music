@@ -3,7 +3,7 @@
 import { PART_INFO } from './arrange.js';
 
 export const PART_COLOR = { cb: '#8f6b4e', vc: '#c08552', va: '#d6b25e', vn2: '#86b6a4', vn1: '#7ba7d9',
-                            solo: '#ffd166', vcl: '#ef8354', pzh: '#e6e1d8', pzb: '#b99a7a', harp: '#c4a7e7' };
+                            solo: '#ffd166', vcl: '#ef8354', pzh: '#e6e1d8', pzb: '#b99a7a', harp: '#c4a7e7', s1: '#7ba7d9', s2: '#e0a458' };
 export const DEG_COLOR = { I: '#78dc78', IV: '#5ab4ff', V: '#ffaa50', vi: '#4fb8a0', ii: '#4a8fd0', iii: '#d98a5a',
                            '♭VI': '#9d7bd8', i: '#7a6fd0', iv: '#b86ab8',
                            1: '#78dc78', 2: '#4a8fd0', 3: '#4fb8a0', 4: '#5ab4ff', 5: '#ffaa50', 6: '#9d7bd8', 7: '#d98a5a' };
@@ -27,8 +27,15 @@ export function drawTimeline(cv, a, score, view, now, opts = {}) {
   g.fillStyle = 'rgba(255,255,255,0.045)';
   for (let i = 0; i < a.n; i++) { const st = S.still[i] > 0; if (st && s0 === null) s0 = a.t[i]; if ((!st || i === a.n - 1) && s0 !== null) { g.fillRect(X(s0), 0, X(a.t[i]) - X(s0), H - 22); s0 = null; } }
 
-  // chords
+  // chords; in Song mode there are none: the row shows each line's bow (on the string, or lifted)
+  const song = score.mode === 'song', C = score.curves;
   let top = band(ROWS.chords);
+  if (song) for (let k = 1; k <= score.song.voices; k++) {
+    const gate = C['gate' + k], h = (ROWS.chords - 8) / score.song.voices, y0 = top + 4 + (k - 1) * h; let g0 = null;
+    g.fillStyle = PART_COLOR['s' + k]; g.globalAlpha = 0.8;
+    for (let i = 0; i < a.n; i++) { const on = gate[i] > 0; if (on && g0 === null) g0 = a.t[i]; if ((!on || i === a.n - 1) && g0 !== null) { g.fillRect(X(g0), y0, Math.max(1, X(a.t[i]) - X(g0)), h - 1); g0 = null; } }
+    g.globalAlpha = 1;
+  }
   score.chords.forEach((c, i) => {
     const xa = X(c.t), xb = X(i + 1 < score.chords.length ? score.chords[i + 1].t : score.dur);
     if (xb < 0 || xa > W) return;
@@ -38,11 +45,26 @@ export function drawTimeline(cv, a, score, view, now, opts = {}) {
 
   // piano roll
   top = band(ROWS.roll);
-  const Y = m => top + ROWS.roll - 4 - (m - LO) / (HI - LO) * (ROWS.roll - 8), nh = (ROWS.roll - 8) / (HI - LO);
-  g.fillStyle = 'rgba(255,255,255,0.03)'; for (let m = 24; m <= HI; m += 12) g.fillRect(0, Y(m), W, 1);
-  g.fillStyle = dim; for (let m = 36; m <= 84; m += 12) g.fillText('C' + (m / 12 - 1), 3, Y(m) - 6);
+  // (Song mode: the roll is just the lines' own range)
+  const lad = song ? score.song.ladders.flat() : null, lo = song ? Math.min(...lad) - 4 : LO, hi = song ? Math.max(...lad) + 4 : HI;
+  const Y = m => top + ROWS.roll - 4 - (m - lo) / (hi - lo) * (ROWS.roll - 8), nh = (ROWS.roll - 8) / (hi - lo);
+  g.fillStyle = 'rgba(255,255,255,0.03)'; for (let m = 24; m <= hi; m += 12) if (m >= lo) g.fillRect(0, Y(m), W, 1);
+  if (song) { g.fillStyle = 'rgba(255,255,255,0.025)'; for (const m of new Set(lad)) g.fillRect(0, Y(m), W, 1); }       // the scale's notes
+  g.fillStyle = dim; for (let m = 36; m <= 84; m += 12) if (m > lo + 1 && m < hi) g.fillText('C' + (m / 12 - 1), 3, Y(m) - 6);
   const hide = opts.hidden || {};
+  if (song) {                                               // each line's pitch as it sounds: thicker when louder
+    const step = Math.max(1, Math.floor(a.n * (t1 - t0) / Math.max(1e-6, score.dur) / (W * 3)));
+    for (let k = 1; k <= score.song.voices; k++) {
+      if (hide['s' + k]) continue;
+      const pitch = C['pitch' + k], amp = C['amp' + k]; g.strokeStyle = PART_COLOR['s' + k]; g.lineCap = 'round';
+      for (let i = step; i < a.n; i += step) { if (!(amp[i] > 0.004) || !(amp[i - step] > 0.004)) continue; const xa = X(a.t[i - step]), xb = X(a.t[i]); if (xb < 0 || xa > W) continue;
+        g.lineWidth = 1 + 4.5 * amp[i]; g.beginPath(); g.moveTo(xa, Y(pitch[i - step])); g.lineTo(xb, Y(pitch[i])); g.stroke(); }
+      g.fillStyle = '#efe9df'; for (const n of score.notes) if (n.part === 's' + k && !n.slur) { const x = X(n.t0); if (x >= 0 && x <= W) g.fillRect(x - 0.5, Y(n.midi) - 7, 1.5, 14); }   // a new bow
+    }
+    g.lineWidth = 1; g.lineCap = 'butt';
+  }
   for (const pass of [0, 1]) for (const n of score.notes) {
+    if (song) break;
     const lineP = n.part === 'solo' || n.part === 'vcl';
     if ((pass === 1) !== (lineP || n.art !== 'sus') || hide[n.part]) continue;
     const xa = X(n.t0), xb = X(n.t1 ?? score.dur); if (xb < 0 || xa > W) continue;
@@ -64,13 +86,25 @@ export function drawTimeline(cv, a, score, view, now, opts = {}) {
     if (fill) { g.lineTo(X(Math.min(t1, score.dur)), top + base - 2); g.lineTo(X(Math.max(t0, 0)), top + base - 2); g.closePath(); g.fillStyle = fill; g.fill(); }
     else { g.strokeStyle = color; g.lineWidth = 1.2; g.stroke(); }
   };
-  curve(score.curves.dynMid, null, 'rgba(240,160,80,0.38)'); curve(score.curves.dynTop, '#7ba7d9'); curve(score.curves.dynBass, '#8f6b4e'); curve(S.move, 'rgba(239,233,223,0.45)');
-  label(top, [['dynamic: middle', '#f0a050'], ['top (hands)', '#7ba7d9'], ['bass (legs)', '#b08a68'], ['her speed', '#efe9df']]);
+  if (song) {
+    curve(C.amp1, null, 'rgba(123,167,217,0.35)'); if (score.song.voices > 1) curve(C.amp2, PART_COLOR.s2);
+    curve(C.vib1, 'rgba(239,233,223,0.7)'); if (score.song.voices > 1) curve(C.vib2, 'rgba(224,164,88,0.55)');
+    label(top, [['loudness: upper line', '#7ba7d9'], ...(score.song.voices > 1 ? [['lower line', PART_COLOR.s2]] : []), ['vibrato', '#efe9df']]);
+  } else {
+    curve(score.curves.dynMid, null, 'rgba(240,160,80,0.38)'); curve(score.curves.dynTop, '#7ba7d9'); curve(score.curves.dynBass, '#8f6b4e'); curve(S.move, 'rgba(239,233,223,0.45)');
+    label(top, [['dynamic: middle', '#f0a050'], ['top (hands)', '#7ba7d9'], ['bass (legs)', '#b08a68'], ['her speed', '#efe9df']]);
+  }
 
   // the body's shape
   top = band(ROWS.shape);
-  curve(S.level, '#efe9df', null, 1 / 1.2, ROWS.shape); curve(S.fold, '#b86ab8', null, 1, ROWS.shape); curve(score.curves.span, '#78dc78', null, 1, ROWS.shape); curve(score.curves.lift, '#7ba7d9', null, 1, ROWS.shape);
-  label(top, [['hips height', '#efe9df'], ['fold', '#b86ab8'], ['span', '#78dc78'], ['lift', '#7ba7d9']]);
+  if (song) {                                               // the hands: heights (shifted so that hanging is 0), and how closed each is
+    const lift = k => { const v = new Float32Array(a.n); for (let i = 0; i < a.n; i++) v[i] = (S[k][i] + 0.4) / 1.7; return v; };
+    curve(lift('upR'), '#7ba7d9', null, 1, ROWS.shape); curve(lift('upL'), PART_COLOR.s2, null, 1, ROWS.shape); curve(S.fistR, '#e06c75', null, 1, ROWS.shape); curve(S.fistL, '#b85a8a', null, 1, ROWS.shape);
+    label(top, [['hand height: right', '#7ba7d9'], ['left', PART_COLOR.s2], ['fist: right', '#e06c75'], ['left', '#b85a8a']]);
+  } else {
+    curve(S.level, '#efe9df', null, 1 / 1.2, ROWS.shape); curve(S.fold, '#b86ab8', null, 1, ROWS.shape); curve(score.curves.span, '#78dc78', null, 1, ROWS.shape); curve(score.curves.lift, '#7ba7d9', null, 1, ROWS.shape);
+    label(top, [['hips height', '#efe9df'], ['fold', '#b86ab8'], ['span', '#78dc78'], ['lift', '#7ba7d9']]);
+  }
 
   // events: strokes that could be notes, sudden accents, landings, turns
   top = band(ROWS.events);

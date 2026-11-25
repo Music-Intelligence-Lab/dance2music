@@ -9,16 +9,56 @@
 //    CC 11   each voice's own dynamic (SWAM expression)
 //    CC 1    vibrato depth, growing into each held note (SWAM); or the dynamic again (MIDI_OPTS.cc1 = 'dynamic', Spitfire)
 //    CC 21            tremolo amount        CC 74   brightness
+// Song mode (sung lines, no harmony): line 1 on channel 1, line 2 on channel 3, each a monophonic instrument.
+//    MIDI_OPTS.song = 'notes'  (default: it is right on any instrument) the score's notes, slurred ones overlapping, so
+//                              a monophonic instrument slides between them by itself; no pitch bend
+//                   = 'bend'   one note per bow, and the line's pitch curve as pitch bend around it: every glide and
+//                              slide is exactly the score's. The instrument's bend range MUST be ± MIDI_OPTS.bendRange
+//                              semitones (24; SWAM goes to 48), or the line barely leaves its first note
+//    CC 11  loudness (amp ** 0.8: SWAM's expression is steep at the bottom)   CC 1  vibrato depth   CC 19  vibrato rate
+//    CC 74  brightness
 // The file is format 1, 480 PPQ at 120 bpm, so one second is exactly 960 ticks.
 import { PART_INFO, PARTS, DYN_OF } from './arrange.js';
+import { bowsOf, EPS } from './song.js';
 
-export const CHANNEL = { vn1: 1, va: 2, vc: 3, cb: 4, vn2: 5, solo: 6, vcl: 7, harp: 8, pzh: 9, pzb: 11 };
-export const MIDI_OPTS = { cc1: 'vibrato' };          // 'vibrato' (SWAM) or 'dynamic' (Spitfire and most samplers)
+export const CHANNEL = { vn1: 1, va: 2, vc: 3, cb: 4, vn2: 5, solo: 6, vcl: 7, harp: 8, pzh: 9, pzb: 11, s1: 1, s2: 3 };
+export const MIDI_OPTS = { cc1: 'vibrato', song: 'notes', bendRange: 24 };  // cc1: 'vibrato' (SWAM) or 'dynamic' (Spitfire and most samplers)
+const SONG_HZ = 50;
+const bendBytes = (ch, semis) => { const v = Math.max(0, Math.min(16383, Math.round(8192 + 8192 * semis / MIDI_OPTS.bendRange))); return [0xE0 | ch, v & 0x7f, v >> 7]; };
+const songCC = (C, k, i) => ({ 11: c7(Math.pow(Math.max(0, C['amp' + k][i]), 0.8)), 1: c7(0.75 * C['vib' + k][i]), 19: c7((C['vibHz' + k][i] - 3) / 6), 74: c7(C['bri' + k][i]) });
+const velOf = v => Math.max(1, Math.min(127, Math.round(20 + 105 * v)));
+// 'notes': a slurred note's key velocity says how quick the slide into it is (SWAM: softer is slower; measured, a fourth at
+// velocity 20 takes about 0.2 s). A step is quick, a leap of an octave slow
+const noteVel = n => (n.slur ? Math.round(112 - 88 * Math.max(0, Math.min(1, (n.glide - 0.09) / 0.2))) : velOf(n.vel));
+
+function songMessages(score, times) {
+  const out = [], C = score.curves, bend = MIDI_OPTS.song === 'bend';
+  for (let k = 1; k <= score.song.voices; k++) {
+    const ch = CHANNEL['s' + k] - 1, pitch = C['pitch' + k], bows = bowsOf(score, times, k), notes = score.notes.filter(n => n.part === 's' + k);
+    if (bend) for (const b of bows) { out.push({ t: b.t0, bytes: [0x90 | ch, b.midi, velOf(b.vel)] }, { t: b.t1, bytes: [0x80 | ch, b.midi, 0], off: true }); }
+    else notes.forEach((n, q) => { const nx = notes[q + 1], slurred = nx && nx.slur && nx.t0 - n.t1 < 0.02;
+      out.push({ t: n.t0, bytes: [0x90 | ch, n.midi, noteVel(n)] }, { t: slurred ? nx.t0 + 0.04 : Math.max(n.t0 + 0.05, n.t1), bytes: [0x80 | ch, n.midi, 0], off: true }); });
+    const last = {}; let j = 0, bi = 0, lastBend = null;
+    for (let t = 0; t <= score.dur; t += 1 / SONG_HZ) {
+      while (j < times.length - 2 && times[j + 1] < t) j++;
+      for (const [cc, v] of Object.entries(songCC(C, k, j))) if (last[cc] !== v) { last[cc] = v; out.push({ t, bytes: [0xB0 | ch, +cc, v], cc: true }); }
+      if (!bend) continue;
+      while (bi < bows.length - 1 && bows[bi + 1].t0 <= t + 1 / SONG_HZ) bi++;                   // the bend of the bow about to start goes out before its note
+      const b = bows[bi]; if (!b || t + 1 / SONG_HZ < b.t0 || t > b.t1) continue;
+      const u = times[j + 1] > times[j] ? Math.min(1, Math.max(0, (t - times[j]) / (times[j + 1] - times[j]))) : 0;
+      const by = bendBytes(ch, pitch[j] + (pitch[j + 1] - pitch[j]) * u - b.midi), key = by[1] | (by[2] << 7);
+      if (key !== lastBend) { lastBend = key; out.push({ t, bytes: by, cc: true }); }
+    }
+  }
+  const rank = m => (m.cc ? 0 : m.off ? 1 : 2);
+  return out.sort((a, b) => a.t - b.t || rank(a) - rank(b));
+}
 const CHORALE = ['cb', 'vc', 'va', 'vn2', 'vn1'], CC_HZ = 20;
 const c7 = x => Math.max(0, Math.min(127, Math.round(127 * x)));
 
 // every MIDI message of the score: [{t, bytes}] sorted by time
 export function messages(score, times) {
+  if (score.mode === 'song') return songMessages(score, times);
   const out = [], C = score.curves, dur = score.dur;
   const at = (arr, t, j) => { while (j.i < times.length - 2 && times[j.i + 1] < t) j.i++; return arr[j.i]; };
   for (const p of PARTS) {
@@ -81,7 +121,7 @@ export class MidiOut {
     // notes already sounding at `from`, and the controllers as they stand
     const cc = new Map(), held = new Map();
     for (let k = 0; k < this.i; k++) { const m = this.msgs[k], b = m.bytes, key = b[0] & 0x0f;
-      if (m.cc) cc.set(key + ':' + b[1], b); else if (m.off) held.delete(key + ':' + b[1]); else held.set(key + ':' + b[1], b); }
+      if (m.cc) cc.set(key + ':' + ((b[0] & 0xf0) === 0xE0 ? 'bend' : b[1]), b); else if (m.off) held.delete(key + ':' + b[1]); else held.set(key + ':' + b[1], b); }
     for (const b of cc.values()) this.port.send(b);
     for (const b of held.values()) { this.port.send(b); this.on.set((b[0] & 0x0f) + ':' + b[1], true); }
     this.running = true;
@@ -97,8 +137,32 @@ export class MidiOut {
   }
   // live: the score is still being written. liveStart(score), then liveFrame(i, t) after every Arranger.step
   liveStart(score) { this.stop(); this.live = { score, next: 0, open: [], last: {}, ccAt: -1 }; }
+  // sung lines, live: a bow is a note, the pitch curve is pitch bend around it ('bend'); or every note of the score,
+  // slurred ones overlapping ('notes'). Controllers every frame.
+  liveSong(i, t) {
+    const L = this.live, C = L.score.curves, notes = L.score.notes, bend = MIDI_OPTS.song === 'bend', V = (L.sv = L.sv || {});
+    const off = (ch, midi, ms = 0) => { this.port.send([0x80 | ch, midi, 0], performance.now() + ms); this.on.delete(ch + ':' + midi); };
+    for (; L.next < notes.length; L.next++) {
+      const n = notes[L.next]; if (n.part !== 's1' && n.part !== 's2') continue;
+      const k = n.part === 's1' ? 1 : 2, ch = CHANNEL[n.part] - 1, v = (V[k] = V[k] || { ch, cur: null });
+      if (bend && n.slur && v.cur) continue;                              // the same bow: the pitch bend carries it
+      if (v.cur && bend) off(ch, v.cur.midi);
+      if (bend) this.port.send(bendBytes(ch, C['pitch' + k][i] - n.midi));
+      this.port.send([0x90 | ch, n.midi, bend ? velOf(n.vel) : noteVel(n)]); this.on.set(ch + ':' + n.midi, true);
+      if (v.cur && !bend) off(ch, v.cur.midi, n.slur ? 40 : 0);            // a slurred note overlaps the one before it
+      v.cur = n;
+    }
+    for (const k of [1, 2]) {
+      const v = V[k]; if (!C['amp' + k] || !v) continue;
+      for (const [cc, val] of Object.entries(songCC(C, k, i))) if (L.last[v.ch + ':' + cc] !== val) { L.last[v.ch + ':' + cc] = val; this.port.send([0xB0 | v.ch, +cc, val]); }
+      if (!v.cur) continue;
+      if (bend) this.port.send(bendBytes(v.ch, C['pitch' + k][i] - v.cur.midi));
+      if (!C['gate' + k][i] && (!bend || !(C['amp' + k][i] > EPS))) { off(v.ch, v.cur.midi); v.cur = null; }   // the bow has left the string (and, with bend, the line has faded)
+    }
+  }
   liveFrame(i, t) {
     const L = this.live; if (!L || !this.port) return;
+    if (L.score.mode === 'song') return this.liveSong(i, t);
     const now = performance.now(), C = L.score.curves, notes = L.score.notes, at = x => now + Math.max(0, (x - t) * 1000);
     if (t - L.ccAt >= 1 / CC_HZ) { L.ccAt = t;
       for (const p of PARTS) { const sus = CHORALE.includes(p) || p === 'solo' || p === 'vcl'; if (!sus) continue;

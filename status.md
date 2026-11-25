@@ -1,5 +1,27 @@
 # Project Status
 
+## 2026-11-25 - String Octave: Song versions (no harmony)
+
+- State: Added on branch experiments/string-octave-song; user asked for it on the
+  lab page.
+- Changes: Three versions in web/experiments/string-octave/ (Duet, Song, Duet
+  pentatonic) with no harmony: each hand is a sung line. Hand height is pitch, a
+  fast hand leaps with a portamento, an open hand is the bow and a fist lifts it,
+  a hanging or still hand rests the line, hand speed is loudness, vibrato grows
+  into held notes. New song.js; the hands are read in the page (MediaPipe
+  Gesture Recognizer on a crop around each wrist). MIDI: channels 1 and 3, as
+  slurred notes or as pitch bend. One more linking sentence in
+  web/live/index.html (`?version=duet`). Six new tests (17 in the file).
+- Verification: 17 Node tests pass. Served statically, a 40 s video ran to the
+  end in Chrome in the Duet version at about 21 frames a second with the hands
+  read; replay, version switching and the .wav and .mid exports worked; the
+  rendered .wav had no clipping.
+- Not checked: a real fist (none in the videos at hand), the camera path with a
+  real camera, live MIDI into a DAW, Safari/Firefox, listening by a person to
+  the page's own sound for the sung lines.
+- Outstanding: graphify is not installed on this machine, so the code graph was
+  not refreshed.
+
 ## 2026-11-25 — Smaller saved performance videos
 
 Implemented locally in the live app, Movement Dictionary and Spectral Bass.

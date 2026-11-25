@@ -9,20 +9,45 @@
 //   lines (solo, vcl): soft and full bow mixed by each note's own strength,
 //     loudness shaped by the `solo` curve (the hands' speed)
 //   pizzicato and harp: one-shots
+//   sung lines (s1, s2; Song mode): one voice each, driven by the line's curves rather than its notes. The
+//     nearest recorded note is repitched to follow the pitch curve (glides, slides), with a vibrato on top;
+//     when the pitch has moved too far from that recording the next one is crossfaded in. amp is the
+//     loudness and soft ↔ full bow, bri a low-pass
 //
 // Sections sit left to right as on a stage and share one hall (a generated
 // impulse response).
 import { PART_INFO, PARTS, DYN_OF } from './arrange.js';
+import { EPS } from './song.js';
 
 export const MIX = {                      // defaults; the page's mixer overrides gain per part
-  gain: { cb: 0.9, vc: 0.85, va: 0.8, vn2: 0.75, vn1: 0.7, solo: 0.55, vcl: 0.7, pzh: 0.8, pzb: 0.5, harp: 0.55 },
-  pan: { cb: 0.5, vc: 0.32, va: 0.12, vn2: -0.18, vn1: -0.42, solo: -0.3, vcl: 0.25, pzh: 0.1, pzb: 0.45, harp: -0.6 },
-  send: { cb: 0.18, vc: 0.25, va: 0.3, vn2: 0.32, vn1: 0.34, solo: 0.36, vcl: 0.3, pzh: 0.35, pzb: 0.25, harp: 0.4 },
+  gain: { cb: 0.9, vc: 0.85, va: 0.8, vn2: 0.75, vn1: 0.7, solo: 0.55, vcl: 0.7, pzh: 0.8, pzb: 0.5, harp: 0.55, s1: 1.0, s2: 0.95 },
+  pan: { cb: 0.5, vc: 0.32, va: 0.12, vn2: -0.18, vn1: -0.42, solo: -0.3, vcl: 0.25, pzh: 0.1, pzb: 0.45, harp: -0.6, s1: -0.22, s2: 0.22 },
+  send: { cb: 0.18, vc: 0.25, va: 0.3, vn2: 0.32, vn1: 0.34, solo: 0.36, vcl: 0.3, pzh: 0.35, pzb: 0.25, harp: 0.4, s1: 0.4, s2: 0.36 },
   hallS: 2.8, master: 0.85, curveHz: 30,
   loudExp: 1.4,                           // loudness = dynamic ^ this: with the dynamic's floor at 0.4, about 11 dB from the softest bow to the fullest
   attack: { chord: 0.32, line: 0.09 }, release: { chord: 0.55, line: 0.3 },
 };
 const CHORALE = ['cb', 'vc', 'va', 'vn2', 'vn1'];
+// sung lines: a recording is left for the next when the pitch is `far` semitones from it; carriers crossfade over
+// `xf` s; a line starts over `start` s and ends over `end` s (the bow's own attack and release are in amp);
+// vibrato at full depth is ± `cents`
+export const SONG_MIX = { far: 2.6, xf: 0.07, start: 0.012, end: 0.05, cents: 30, hz: 100 };
+const isSong = p => p === 's1' || p === 's2';
+const FADE_IN = Float32Array.from({ length: 17 }, (_, i) => Math.sin(i / 16 * Math.PI / 2)), FADE_OUT = Float32Array.from(FADE_IN).reverse();
+const briHz = b => 500 * Math.pow(2, 4.6 * Math.min(1, Math.max(0, b)));
+
+// the stretches of a sung line that one recording carries: [{e, ta, tb, first, last}]
+export function carriers(samples, set, times, amp, pitch, n) {
+  const out = []; let cur = null;
+  for (let i = 0; i < n; i++) {
+    if (!(amp[i] > EPS)) { if (cur) { cur.tb = times[i]; cur.last = true; out.push(cur); cur = null; } continue; }
+    const e = samples.pick(set, 'legato_f', pitch[i]);
+    if (!cur) cur = { e, ta: times[i], first: true, last: false };
+    else if (e !== cur.e && Math.abs(pitch[i] - cur.e.midi) > SONG_MIX.far) { cur.tb = times[i]; out.push(cur); cur = { e, ta: times[i], first: false, last: false }; }
+  }
+  if (cur) { cur.tb = times[n - 1]; cur.last = true; out.push(cur); }
+  return out;
+}
 
 export class Samples {
   constructor(base = '/data/samples/') { this.base = base; this.manifest = null; this.buf = new Map(); this.raw = new Map(); }
@@ -34,6 +59,7 @@ export class Samples {
     return best;
   }
   needed(score) {
+    if (score.mode === 'song') return this.all(score.params);
     const out = new Map();
     for (const n of score.notes) {
       const set = PART_INFO[n.part].set;
@@ -44,6 +70,9 @@ export class Samples {
   }
   // everything a live score could ask for: every recorded note of the sections that are switched on
   all(P) {
+    if (P.mode === 'song') { const out = new Map();
+      for (const p of P.sngVoices >= 2 ? ['s1', 's2'] : ['s1']) for (const a of ['legato_p', 'legato_f']) for (const e of this.manifest.sections[PART_INFO[p].set]?.[a] || []) out.set(e.file, e);
+      return [...out.values()]; }
     const parts = P.mode === 'octave' ? ['cb', 'vc', 'va', 'vn1'] : ['cb', 'vc', 'va', 'vn2', 'vn1', 'solo'];
     if (P.leg) parts.push('vcl'); if (P.steps) parts.push('pzb'); if (P.acc) parts.push('pzh'); if (P.harp || P.harpSpin) parts.push('harp');
     const out = new Map();
@@ -165,6 +194,31 @@ export class Player {
       } else if (p === 'solo' || p === 'vcl') {
         const g = mk(root); auto(g.gain, resample(times, C.solo, from, hz, x => 0.25 + 0.75 * x));
         bus[p] = { line: g };
+      } else if (isSong(p)) {
+        const k = p === 's1' ? 1 : 2; if (score.mode !== 'song' || k > score.song.voices) continue;
+        const A = C['amp' + k], lv = d => Math.pow(d, MIX.loudExp);
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.5; lp.connect(root); S.graph.push(lp);
+        auto(lp.frequency, resample(times, C['bri' + k], from, hz, briHz));
+        const soft = mk(lp), full = mk(lp);
+        auto(soft.gain, resample(times, A, from, hz, d => lv(d) * Math.cos(d * Math.PI / 2))); auto(full.gain, resample(times, A, from, hz, d => lv(d) * Math.sin(d * Math.PI / 2) * 1.1));
+        const lfo = ctx.createOscillator(), depth = ctx.createGain(); lfo.connect(depth); S.graph.push(depth);
+        auto(lfo.frequency, resample(times, C['vibHz' + k], from, hz)); auto(depth.gain, resample(times, C['vib' + k], from, hz, x => x * SONG_MIX.cents));
+        lfo.start(at0); S.nodes.push(lfo);
+        const set = PART_INFO[p].set, P = C['pitch' + k];
+        for (const c of carriers(this.samples, set, times, A, P, times.length)) {
+          if (c.tb <= from) continue;
+          const ta = Math.max(c.ta, from), late = c.ta < from - 0.02, a0 = when(ta), xin = c.first && !late ? SONG_MIX.start : SONG_MIX.xf, xout = c.last ? SONG_MIX.end : SONG_MIX.xf;
+          const b0 = Math.max(when(c.tb), a0 + xin + 0.005), cents = resample(times, P, ta, SONG_MIX.hz, x => 100 * (x - c.e.midi)).subarray(0, Math.max(2, Math.ceil((c.tb + xout - ta) * SONG_MIX.hz) + 1));
+          for (const art of ['legato_p', 'legato_f']) {
+            const e = this.samples.pick(set, art, c.e.midi), buf = e && this.samples.get(ctx, e); if (!buf) continue;
+            const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true; src.loopStart = e.loopStart; src.loopEnd = e.loopEnd;
+            src.detune.setValueCurveAtTime(cents, a0, (cents.length - 1) / SONG_MIX.hz); depth.connect(src.detune);
+            const g = ctx.createGain(); src.connect(g); g.connect(art === 'legato_p' ? soft : full);
+            g.gain.setValueAtTime(0, Math.max(0, a0 - 0.001)); g.gain.setValueCurveAtTime(FADE_IN, a0, xin); g.gain.setValueCurveAtTime(FADE_OUT, b0, xout);
+            src.start(a0, c.first && !late ? 0 : e.loopStart + 0.1); src.stop(b0 + xout + 0.05);
+            S.nodes.push(src); S.graph.push(g);
+          }
+        }
       } else { const g = mk(root); auto(g.gain, resample(times, C.on, from, hz)); bus[p] = { shot: g }; }
     }
     const voice = (e, dest, t0, t1, gain, att, rel, loop) => {
@@ -189,6 +243,7 @@ export class Player {
     };
 
     for (const n of score.notes) {
+      if (isSong(n.part)) continue;                              // sung lines are played from their curves, above
       if (n.t1 <= from && n.art === 'sus') continue;
       if (n.t0 < from - 0.02 && n.art !== 'sus') continue;
       const set = PART_INFO[n.part].set; voice.midi = n.midi;
@@ -223,14 +278,20 @@ export class Player {
         const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.5; lp.frequency.value = 2000; lp.connect(root); S.graph.push(lp);
         S.bus[p] = { lp, legato_p: mk(lp), legato_f: mk(lp), tremolo: mk(lp) };
       } else if (p === 'solo' || p === 'vcl') S.bus[p] = { line: mk(root) };
-      else S.bus[p] = { shot: mk(root) };
+      else if (isSong(p)) {
+        if (score.mode !== 'song') continue;
+        const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 0.5; lp.frequency.value = 2000; lp.connect(root); S.graph.push(lp);
+        const lfo = ctx.createOscillator(), depth = ctx.createGain(); depth.gain.value = 0; S.graph.push(depth); lfo.frequency.value = 5.7; lfo.connect(depth); lfo.start(); S.nodes.push(lfo);
+        S.bus[p] = { song: p === 's1' ? 1 : 2, lp, soft: mk(lp), full: mk(lp), lfo, depth, cur: null };
+      } else S.bus[p] = { shot: mk(root) };
     }
   }
   liveFrame(i, t) {
     const S = this.session; if (!S || !S.live) return;
     const ctx = this.ctx, now = ctx.currentTime + 0.02, C = S.score.curves, set = (param, v) => param.setTargetAtTime(v, now, 0.03);
     for (const p of PARTS) {
-      const b = S.bus[p];
+      const b = S.bus[p]; if (!b) continue;
+      if (b.song) { this.liveSong(b, p, i, now); continue; }
       if (b.lp) {
         const d = (C[DYN_OF[p]] || C.dyn)[i], m = C.trem[i], lv = Math.pow(d, MIX.loudExp);
         set(b.lp.frequency, 700 * Math.pow(2, 4.2 * Math.min(1, 0.55 * C.bright[i] + 0.6 * d)));
@@ -249,6 +310,7 @@ export class Player {
     const notes = S.score.notes;
     for (; S.next < notes.length; S.next++) {
       const n = notes[S.next], set2 = PART_INFO[n.part].set, pick = art => this.samples.pick(set2, art, n.midi);
+      if (isSong(n.part)) continue;
       if (n.art !== 'sus') { if (n.t0 >= t - 0.05) start(pick(n.art === 'pluck' ? 'pluck' : 'pizz'), S.bus[n.part].shot, n, n.vel, 0, false); continue; }
       if (n.t1 !== null && n.t1 <= t) continue;                 // over before we came in
       const vs = [];
@@ -263,6 +325,31 @@ export class Player {
         v.src.onended = () => { try { v.g.disconnect(); } catch (err) {} const k = S.nodes.indexOf(v.src); if (k >= 0) S.nodes.splice(k, 1); }; }
       return false;
     });
+  }
+  // one sung line, live: the frame's curves steer the layers, the vibrato and the pitch of the recording that
+  // carries the line; a new recording is crossfaded in when the pitch has left the old one behind
+  liveSong(b, p, i, now) {
+    const S = this.session, ctx = this.ctx, C = S.score.curves, k = b.song, a = C['amp' + k][i], pitch = C['pitch' + k][i], set = PART_INFO[p].set;
+    const tgt = (param, v) => param.setTargetAtTime(v, now, 0.03), lv = Math.pow(a, MIX.loudExp);
+    tgt(b.soft.gain, lv * Math.cos(a * Math.PI / 2)); tgt(b.full.gain, lv * Math.sin(a * Math.PI / 2) * 1.1); tgt(b.lp.frequency, briHz(C['bri' + k][i]));
+    tgt(b.depth.gain, C['vib' + k][i] * SONG_MIX.cents); tgt(b.lfo.frequency, C['vibHz' + k][i] || 5.7);
+    const drop = (c, x) => { for (const v of c.vs) { v.g.gain.cancelScheduledValues(now); v.g.gain.setTargetAtTime(0, now, x / 3); v.src.stop(now + 2 * x + 0.05);
+      v.src.onended = () => { try { v.g.disconnect(); } catch (err) {} const q = S.nodes.indexOf(v.src); if (q >= 0) S.nodes.splice(q, 1); }; } };
+    if (!(a > EPS)) { if (b.cur) { drop(b.cur, SONG_MIX.end); b.cur = null; } return; }
+    const e = this.samples.pick(set, 'legato_f', pitch);
+    if (!b.cur || (e !== b.cur.e && Math.abs(pitch - b.cur.e.midi) > SONG_MIX.far)) {
+      const first = !b.cur, x = first ? SONG_MIX.start : SONG_MIX.xf, vs = [];
+      if (b.cur) drop(b.cur, SONG_MIX.xf);
+      for (const art of ['legato_p', 'legato_f']) {
+        const e2 = this.samples.pick(set, art, e.midi), buf = e2 && this.samples.get(ctx, e2); if (!buf) continue;
+        const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true; src.loopStart = e2.loopStart; src.loopEnd = e2.loopEnd;
+        src.detune.value = 100 * (pitch - e.midi); b.depth.connect(src.detune);
+        const g = ctx.createGain(); g.gain.value = 0; g.gain.setTargetAtTime(1, now, x / 3); src.connect(g); g.connect(art === 'legato_p' ? b.soft : b.full);
+        src.start(now, first ? 0 : e2.loopStart + 0.1); S.nodes.push(src); vs.push({ src, g });
+      }
+      b.cur = { e, vs };
+    }
+    for (const v of b.cur.vs) v.src.detune.setTargetAtTime(100 * (pitch - b.cur.e.midi), now, 0.012);
   }
   // clip time now, while a session plays
   time() { return this.session && !this.session.live ? this.session.from + (this.ctx.currentTime - this.session.at0) : null; }
